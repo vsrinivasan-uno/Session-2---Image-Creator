@@ -90,8 +90,70 @@ class LLMEducationPlatform {
         // Initial update
         updateValues();
 
+        // Setup Few-Shot parameter controls
+        this.setupFewShotParameterControls();
+        
+        // Setup Chain-of-Thought parameter controls
+        this.setupChainThoughtParameterControls();
+
         // Setup assignment parameter controls
         this.setupAssignmentParameterControls();
+    }
+
+    setupFewShotParameterControls() {
+        const fewShotTemp = document.getElementById('fewShotTemperature');
+        const fewShotTopP = document.getElementById('fewShotTopP');
+        const fewShotTopK = document.getElementById('fewShotTopK');
+
+        if (!fewShotTemp || !fewShotTopP || !fewShotTopK) return;
+
+        const updateFewShotValues = () => {
+            const temp = parseFloat(fewShotTemp.value);
+            const p = parseFloat(fewShotTopP.value);
+            const k = parseInt(fewShotTopK.value);
+
+            document.getElementById('fewShotTempValue').textContent = temp;
+            document.getElementById('fewShotTopPValue').textContent = p;
+            document.getElementById('fewShotTopKValue').textContent = k;
+            
+            // Update Few-Shot recommendation
+            this.updateFewShotParameterRecommendation(temp, p, k);
+        };
+
+        fewShotTemp.addEventListener('input', updateFewShotValues);
+        fewShotTopP.addEventListener('input', updateFewShotValues);
+        fewShotTopK.addEventListener('input', updateFewShotValues);
+
+        // Initial update
+        updateFewShotValues();
+    }
+
+    setupChainThoughtParameterControls() {
+        const chainThoughtTemp = document.getElementById('chainThoughtTemperature');
+        const chainThoughtTopP = document.getElementById('chainThoughtTopP');
+        const chainThoughtTopK = document.getElementById('chainThoughtTopK');
+
+        if (!chainThoughtTemp || !chainThoughtTopP || !chainThoughtTopK) return;
+
+        const updateChainThoughtValues = () => {
+            const temp = parseFloat(chainThoughtTemp.value);
+            const p = parseFloat(chainThoughtTopP.value);
+            const k = parseInt(chainThoughtTopK.value);
+
+            document.getElementById('chainThoughtTempValue').textContent = temp;
+            document.getElementById('chainThoughtTopPValue').textContent = p;
+            document.getElementById('chainThoughtTopKValue').textContent = k;
+            
+            // Update Chain-of-Thought recommendation
+            this.updateChainThoughtParameterRecommendation(temp, p, k);
+        };
+
+        chainThoughtTemp.addEventListener('input', updateChainThoughtValues);
+        chainThoughtTopP.addEventListener('input', updateChainThoughtValues);
+        chainThoughtTopK.addEventListener('input', updateChainThoughtValues);
+
+        // Initial update
+        updateChainThoughtValues();
     }
 
     setupAssignmentParameterControls() {
@@ -122,19 +184,95 @@ class LLMEducationPlatform {
         updateAssignmentValues();
     }
 
+    updateFewShotParameterRecommendation(temp, topP, topK) {
+        const recommendationEl = document.getElementById('fewShotParamRecommendation');
+        if (!recommendationEl) return;
+
+        const result = this.getParameterRecommendationText(temp, topP, topK);
+        
+        const iconEl = recommendationEl.querySelector('.recommendation-icon');
+        const textEl = recommendationEl.querySelector('.recommendation-text');
+        const tagsContainer = recommendationEl.querySelector('.scenario-tags');
+        
+        if (textEl) {
+            textEl.textContent = result.text;
+        }
+        
+        // Update scenarios
+        if (tagsContainer) {
+            tagsContainer.innerHTML = result.scenarios.map(scenario => 
+                `<span class="scenario-tag"><i class="${scenario.icon}"></i> ${scenario.label}</span>`
+            ).join('');
+        }
+        
+        // Update icon based on creativity level
+        if (iconEl) {
+            if (temp <= 0.3) {
+                iconEl.textContent = '🎯';
+            } else if (temp <= 0.6) {
+                iconEl.textContent = '⚡';
+            } else if (temp <= 0.8) {
+                iconEl.textContent = '🎨';
+            } else {
+                iconEl.textContent = '🌟';
+            }
+        }
+    }
+
+    updateChainThoughtParameterRecommendation(temp, topP, topK) {
+        const recommendationEl = document.getElementById('chainThoughtParamRecommendation');
+        if (!recommendationEl) return;
+
+        const result = this.getParameterRecommendationText(temp, topP, topK);
+        
+        const iconEl = recommendationEl.querySelector('.recommendation-icon');
+        const textEl = recommendationEl.querySelector('.recommendation-text');
+        const tagsContainer = recommendationEl.querySelector('.scenario-tags');
+        
+        if (textEl) {
+            textEl.textContent = result.text;
+        }
+        
+        // Update scenarios
+        if (tagsContainer) {
+            tagsContainer.innerHTML = result.scenarios.map(scenario => 
+                `<span class="scenario-tag"><i class="${scenario.icon}"></i> ${scenario.label}</span>`
+            ).join('');
+        }
+        
+        // Update icon based on creativity level
+        if (iconEl) {
+            if (temp <= 0.3) {
+                iconEl.textContent = '🎯';
+            } else if (temp <= 0.6) {
+                iconEl.textContent = '⚡';
+            } else if (temp <= 0.8) {
+                iconEl.textContent = '🎨';
+            } else {
+                iconEl.textContent = '🌟';
+            }
+        }
+    }
+
     updateAssignmentParameterRecommendation(temp, topP, topK) {
         const recommendationEl = document.getElementById('assignmentParamRecommendation');
         if (!recommendationEl) return;
 
-        let recommendation = this.getParameterRecommendationText(temp, topP, topK);
+        const result = this.getParameterRecommendationText(temp, topP, topK);
         
         const iconEl = recommendationEl.querySelector('.recommendation-icon');
         const textEl = recommendationEl.querySelector('.recommendation-text');
+        const tagsContainer = recommendationEl.querySelector('.scenario-tags');
         
         if (textEl) {
-            textEl.textContent = recommendation;
-        } else {
-            recommendationEl.textContent = recommendation;
+            textEl.textContent = result.text;
+        }
+        
+        // Update scenarios (if the assignment section uses the new structure)
+        if (tagsContainer) {
+            tagsContainer.innerHTML = result.scenarios.map(scenario => 
+                `<span class="scenario-tag"><i class="${scenario.icon}"></i> ${scenario.label}</span>`
+            ).join('');
         }
         
         // Update icon based on creativity level
@@ -152,75 +290,130 @@ class LLMEducationPlatform {
     }
 
     getParameterRecommendationText(temp, topP, topK) {
+        let scenarios = [];
         let recommendation = '';
 
-        // Temperature-based recommendations (same logic as main)
-        if (temp === 0.0) {
-            recommendation = 'Ultra-conservative: Identical results every time, perfect for templates';
-        } else if (temp === 0.1) {
-            recommendation = 'Minimal variation: Slight differences while maintaining core consistency';
-        } else if (temp === 0.2) {
-            recommendation = 'Low creativity: Predictable outputs with minor artistic variations';
-        } else if (temp === 0.3) {
-            recommendation = 'Controlled creativity: Safe artistic choices with reliable quality';
-        } else if (temp === 0.4) {
-            recommendation = 'Moderate precision: Professional results with some creative flexibility';
-        } else if (temp === 0.5) {
-            recommendation = 'Balanced approach: Equal parts reliability and creative expression';
-        } else if (temp === 0.6) {
-            recommendation = 'Creative leaning: More artistic freedom while maintaining coherence';
-        } else if (temp === 0.7) {
-            recommendation = 'High creativity: Varied artistic interpretations with good control';
-        } else if (temp === 0.8) {
-            recommendation = 'Very creative: Bold artistic choices with surprising elements';
-        } else if (temp === 0.9) {
-            recommendation = 'Experimental mode: Highly unpredictable, innovative results';
-        } else if (temp === 1.0) {
-            recommendation = 'Maximum chaos: Completely unpredictable, avant-garde outcomes';
-        }
+        // Calculate creativity level (0-100)
+        const creativityLevel = Math.round(temp * 100);
+        
+        // Calculate complexity level based on topP and topK
+        const complexityLevel = Math.round(((topP * 0.6) + (topK / 100 * 0.4)) * 100);
+        
+        // Calculate focus level (inverse of complexity for some scenarios)
+        const focusLevel = 100 - complexityLevel;
 
-        // Add Top-P influence
-        if (topP <= 0.3) {
-            recommendation += ' | Conservative vocabulary choices';
-        } else if (topP <= 0.5) {
-            recommendation += ' | Standard word selection';
-        } else if (topP <= 0.7) {
-            recommendation += ' | Diverse language options';
-        } else if (topP <= 0.9) {
-            recommendation += ' | Rich vocabulary variety';
+        // Primary scenarios based on creativity level (more granular)
+        if (creativityLevel <= 15) {
+            scenarios.push(
+                { icon: 'fas fa-id-card', label: 'ID Photos' },
+                { icon: 'fas fa-building', label: 'Corporate' },
+                { icon: 'fas fa-file-alt', label: 'Documentation' }
+            );
+            recommendation = 'Ultra-consistent outputs ideal for standardized documentation and formal business requirements.';
+        } else if (creativityLevel <= 25) {
+            scenarios.push(
+                { icon: 'fas fa-briefcase', label: 'Business' },
+                { icon: 'fas fa-user-tie', label: 'Executive' },
+                { icon: 'fas fa-award', label: 'Professional' }
+            );
+            recommendation = 'Highly reliable professional quality with minimal creative variation.';
+        } else if (creativityLevel <= 35) {
+            scenarios.push(
+                { icon: 'fas fa-camera', label: 'Portfolio' },
+                { icon: 'fas fa-newspaper', label: 'Editorial' },
+                { icon: 'fas fa-graduation-cap', label: 'Academic' }
+            );
+            recommendation = 'Controlled creativity maintaining professional standards with subtle artistic elements.';
+        } else if (creativityLevel <= 50) {
+            scenarios.push(
+                { icon: 'fas fa-users', label: 'Social Media' },
+                { icon: 'fas fa-star', label: 'Marketing' },
+                { icon: 'fas fa-heart', label: 'Lifestyle' }
+            );
+            recommendation = 'Balanced approach offering creative flexibility while maintaining broad appeal.';
+        } else if (creativityLevel <= 65) {
+            scenarios.push(
+                { icon: 'fas fa-palette', label: 'Creative' },
+                { icon: 'fas fa-music', label: 'Artistic' },
+                { icon: 'fas fa-lightbulb', label: 'Innovative' }
+            );
+            recommendation = 'Creative-leaning results with artistic flair and unique interpretations.';
+        } else if (creativityLevel <= 80) {
+            scenarios.push(
+                { icon: 'fas fa-paint-brush', label: 'Artistic' },
+                { icon: 'fas fa-magic', label: 'Fantasy' },
+                { icon: 'fas fa-rocket', label: 'Experimental' }
+            );
+            recommendation = 'High creativity producing unique and artistic results with bold interpretations.';
         } else {
-            recommendation += ' | Maximum linguistic diversity';
+            scenarios.push(
+                { icon: 'fas fa-fire', label: 'Experimental' },
+                { icon: 'fas fa-rainbow', label: 'Abstract' },
+                { icon: 'fas fa-bolt', label: 'Avant-garde' }
+            );
+            recommendation = 'Maximum creativity with highly unpredictable and cutting-edge artistic outcomes.';
         }
 
-        // Add Top-K influence
-        if (topK <= 20) {
-            recommendation += ' | Simple, focused expressions';
-        } else if (topK <= 40) {
-            recommendation += ' | Moderate complexity';
-        } else if (topK <= 60) {
-            recommendation += ' | Rich detailed descriptions';
-        } else if (topK <= 80) {
-            recommendation += ' | Complex, layered language';
+        // Add complexity-based scenarios (dynamic based on topP and topK)
+        if (complexityLevel >= 85) {
+            scenarios.push({ icon: 'fas fa-book', label: 'Detailed' });
+            scenarios.push({ icon: 'fas fa-layer-group', label: 'Complex' });
+            recommendation += ' Enhanced with rich detail and sophisticated vocabulary.';
+        } else if (complexityLevel >= 70) {
+            scenarios.push({ icon: 'fas fa-cog', label: 'Technical' });
+            scenarios.push({ icon: 'fas fa-chart-line', label: 'Analytical' });
+            recommendation += ' Balanced complexity with good technical detail.';
+        } else if (complexityLevel >= 50) {
+            scenarios.push({ icon: 'fas fa-balance-scale', label: 'Balanced' });
+            recommendation += ' Moderate complexity suitable for general use.';
+        } else if (complexityLevel >= 30) {
+            scenarios.push({ icon: 'fas fa-eye', label: 'Clear' });
+            scenarios.push({ icon: 'fas fa-check-circle', label: 'Focused' });
+            recommendation += ' Simplified approach with clear, focused descriptions.';
         } else {
-            recommendation += ' | Maximum expressive complexity';
+            scenarios.push({ icon: 'fas fa-compress', label: 'Minimal' });
+            scenarios.push({ icon: 'fas fa-bullseye', label: 'Precise' });
+            recommendation += ' Minimal complexity optimized for simplicity and precision.';
         }
 
-        return recommendation;
+        // Special combination scenarios
+        if (creativityLevel <= 30 && focusLevel >= 70) {
+            scenarios.push({ icon: 'fas fa-shield-alt', label: 'Reliable' });
+        }
+        
+        if (creativityLevel >= 60 && complexityLevel >= 70) {
+            scenarios.push({ icon: 'fas fa-infinity', label: 'Limitless' });
+        }
+        
+        if (creativityLevel >= 40 && creativityLevel <= 60 && complexityLevel >= 40 && complexityLevel <= 60) {
+            scenarios.push({ icon: 'fas fa-handshake', label: 'Versatile' });
+        }
+
+        // Limit to maximum 6 scenarios for clean display
+        scenarios = scenarios.slice(0, 6);
+
+        return { text: recommendation, scenarios: scenarios };
     }
 
     updateParameterRecommendation(temp, topP, topK) {
         const recommendationEl = document.getElementById('paramRecommendation');
         if (!recommendationEl) return;
 
-        let recommendation = this.getParameterRecommendationText(temp, topP, topK);
-
+        const result = this.getParameterRecommendationText(temp, topP, topK);
+        
         const iconEl = recommendationEl.querySelector('.recommendation-icon');
         const textEl = recommendationEl.querySelector('.recommendation-text');
+        const tagsContainer = recommendationEl.querySelector('.scenario-tags');
         
         if (textEl) {
-            textEl.textContent = recommendation;
-        } else {
-            recommendationEl.textContent = recommendation;
+            textEl.textContent = result.text;
+        }
+        
+        // Update scenarios
+        if (tagsContainer) {
+            tagsContainer.innerHTML = result.scenarios.map(scenario => 
+                `<span class="scenario-tag"><i class="${scenario.icon}"></i> ${scenario.label}</span>`
+            ).join('');
         }
         
         // Update icon based on creativity level
@@ -900,109 +1093,100 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         });
     }
 
-    // Enhanced prompt engineering based on parameters
+    // Enhanced prompt engineering for PHOTOREALISTIC generation
     enhancePromptWithParameters(basePrompt, temp, topP, topK) {
-        // Ultra-granular modifiers that create dramatic visual differences for small parameter changes
+        // Professional photography modifiers for maximum realism
         const tempModifiers = {
-            0.0: 'absolutely identical replication, zero variation, template mode, clinical precision',
-            0.1: 'microscopic variation only, nearly identical outputs, ultra-conservative, photorealistic accuracy',
-            0.2: 'minimal artistic liberty, slight texture variations, highly constrained, technical illustration style',
-            0.3: 'subtle creative touches, minor style adjustments, controlled enhancement, professional photography quality',
-            0.4: 'moderate artistic interpretation, noticeable style choices, professional flexibility, refined artwork',
-            0.5: 'balanced creative expression, clear artistic vision, optimal creativity, polished digital art',
-            0.6: 'enhanced artistic freedom, bold style choices, creative interpretation, stylized rendering',
-            0.7: 'high creative liberty, dramatic artistic flair, expressive interpretation, dynamic composition',
-            0.8: 'very bold artistic choices, surprising elements, highly creative, experimental artistic style',
-            0.9: 'extreme creative interpretation, unpredictable results, experimental approach, avant-garde aesthetics',
-            1.0: 'maximum chaos, completely unpredictable, avant-garde experimentation, surreal abstraction'
+            0.0: 'ultra-sharp focus, clinical precision, technical documentation quality, zero artistic interpretation',
+            0.1: 'professional studio photography, controlled lighting, minimal variation, commercial grade quality',
+            0.2: 'high-end portrait photography, precise technical execution, professional equipment quality',
+            0.3: 'premium commercial photography, refined technical control, professional studio standards',
+            0.4: 'expert photographer technique, balanced technical precision, award-winning commercial quality',
+            0.5: 'master photographer approach, optimal technical balance, gallery-worthy photographic excellence',
+            0.6: 'creative professional photography, artistic technical mastery, museum-quality photographic art',
+            0.7: 'visionary photographer style, innovative technical execution, internationally acclaimed quality',
+            0.8: 'groundbreaking photographic technique, cutting-edge technical innovation, legendary photographer quality',
+            0.9: 'revolutionary photographic vision, unprecedented technical mastery, history-making photography',
+            1.0: 'transcendent photographic artistry, impossible technical perfection, reality-defying photographic quality'
         };
 
         const topPModifiers = {
-            0.0: 'extremely limited vocabulary, repetitive elements, ultra-conservative styling',
-            0.1: 'very restricted selection, traditional terminology only, classic art approaches',
-            0.2: 'limited variety, conventional descriptors, standard artistic techniques',
-            0.3: 'moderate word variety, standard artistic language, established art styles',
-            0.4: 'good vocabulary diversity, expanded descriptive range, mixed artistic approaches',
-            0.5: 'balanced linguistic choices, rich descriptive vocabulary, versatile art styles',
-            0.6: 'diverse language options, creative terminology, eclectic artistic fusion',
-            0.7: 'rich vocabulary variety, innovative descriptive language, experimental art mixing',
-            0.8: 'extensive linguistic diversity, unique combinations, avant-garde style fusion',
-            0.9: 'maximum vocabulary range, experimental linguistic fusion, radical style combinations',
-            1.0: 'unlimited linguistic possibilities, completely experimental language, chaotic style mixing'
+            0.0: 'basic camera terminology, standard photographic language, conventional technical descriptions',
+            0.1: 'professional photography vocabulary, technical precision, industry-standard terminology',
+            0.2: 'advanced photographic language, sophisticated technical descriptions, expert terminology',
+            0.3: 'master photographer vocabulary, comprehensive technical language, professional excellence',
+            0.4: 'virtuoso photographic terminology, elaborate technical descriptions, artistic mastery language',
+            0.5: 'legendary photographer vocabulary, transcendent technical language, poetic precision',
+            0.6: 'innovative photographic language, revolutionary technical descriptions, visionary terminology',
+            0.7: 'groundbreaking photography vocabulary, cutting-edge technical language, paradigm-shifting descriptions',
+            0.8: 'transcendent photographic terminology, reality-bending technical language, impossible precision',
+            0.9: 'otherworldly photography vocabulary, divine technical descriptions, cosmic photographic language',
+            1.0: 'infinite photographic possibilities, unlimited technical vocabulary, universal visual language'
         };
 
         const topKModifiers = {
-            10: 'ultra-minimalist, stark simplicity, bare essentials only, clean geometric forms',
-            20: 'very simple composition, basic elements, minimal detail, pure geometric shapes',
-            30: 'simple but complete, essential details, clean approach, refined minimalism',
-            40: 'moderate complexity, balanced detail, good foundation, structured composition',
-            50: 'well-detailed, comprehensive elements, rich foundation, layered artistic depth',
-            60: 'highly detailed, complex composition, layered elements, intricate artistic details',
-            70: 'very complex, intricate details, sophisticated layering, elaborate visual complexity',
-            80: 'extremely detailed, elaborate composition, maximum complexity, dense visual information',
-            90: 'overwhelming detail, ultra-complex, intricate mastery, hyperealistic elaboration',
-            100: 'absolutely maximum complexity, every possible detail, complete elaboration, photorealistic hyperdetail'
+            10: 'clean minimalist photography, essential elements only, pure photographic simplicity',
+            20: 'refined minimalist composition, selective focus, elegant photographic restraint',
+            30: 'sophisticated simplicity, precise photographic elements, refined technical clarity',
+            40: 'balanced photographic complexity, professional technical detail, structured visual hierarchy',
+            50: 'rich photographic detail, comprehensive technical elements, layered visual sophistication',
+            60: 'highly detailed photography, complex technical composition, intricate visual layering',
+            70: 'extremely detailed photographic work, elaborate technical composition, maximum visual complexity',
+            80: 'hyperdetailed photography, overwhelming technical precision, dense photographic information',
+            90: 'impossibly detailed photographic mastery, transcendent technical complexity, reality-surpassing detail',
+            100: 'infinite photographic detail, absolute technical perfection, universe-encompassing visual complexity'
         };
 
         // Find exact parameter matches
         const tempKey = temp.toFixed(1);
         const topPKey = topP.toFixed(1);
-        const topKKey = Math.round(topK / 10) * 10; // Round to nearest 10
+        const topKKey = Math.round(topK / 10) * 10;
 
         const tempMod = tempModifiers[tempKey] || tempModifiers[0.5];
         const topPMod = topPModifiers[topPKey] || topPModifiers[0.5];
         const topKMod = topKModifiers[topKKey] || topKModifiers[50];
 
-        // Create highly sensitive seeds that change dramatically with small parameter changes
-        const tempSeed = Math.floor(temp * 12347);  // Large prime multiplier for temperature
-        const topPSeed = Math.floor(topP * 7919);   // Different large prime for top-p
-        const topKSeed = Math.floor(topK * 337);    // Different multiplier for top-k
-        const microSeed = Math.floor((temp * 100 + topP * 100 + topK) * 1291); // Combined micro-sensitivity
+        // Photography-focused seed generation
+        const tempSeed = Math.floor(temp * 12347);
+        const topPSeed = Math.floor(topP * 7919);
+        const topKSeed = Math.floor(topK * 337);
+        const microSeed = Math.floor((temp * 100 + topP * 100 + topK) * 1291);
         
-        // Add parameter-specific style instructions that force dramatic visual changes
-        let styleInstructions = '';
+        // Professional photography enhancement based on parameters
+        let photographicEnhancement = '';
         
-        // Temperature-based visual style forcing
-        if (temp <= 0.2) {
-            styleInstructions += ', hyperrealistic photography style, clinical documentation quality, technical precision rendering';
-        } else if (temp <= 0.4) {
-            styleInstructions += ', professional digital art, polished commercial quality, refined artistic technique';
+        // Temperature-based photographic style
+        if (temp <= 0.3) {
+            photographicEnhancement += ', shot with professional DSLR camera, studio lighting setup, commercial photography quality, crystal clear focus, professional color grading';
         } else if (temp <= 0.6) {
-            styleInstructions += ', artistic interpretation, stylized rendering, creative lighting effects, dynamic composition';
-        } else if (temp <= 0.8) {
-            styleInstructions += ', bold artistic style, experimental composition, dramatic visual effects, creative abstraction';
+            photographicEnhancement += ', captured with high-end camera equipment, dramatic professional lighting, award-winning photography composition, cinematic quality, perfect exposure';
         } else {
-            styleInstructions += ', completely experimental art style, surreal visual elements, chaotic composition, abstract expressionism';
+            photographicEnhancement += ', masterpiece photography, legendary photographer technique, museum-quality composition, revolutionary lighting setup, impossible photographic perfection';
         }
 
-        // Top-P based vocabulary/style complexity
-        if (topP <= 0.3) {
-            styleInstructions += ', traditional classical art style, conventional composition rules, timeless aesthetic';
-        } else if (topP <= 0.5) {
-            styleInstructions += ', established art style, proven composition techniques, refined artistic approach';
-        } else if (topP <= 0.7) {
-            styleInstructions += ', modern contemporary art style, innovative composition, creative artistic fusion';
-        } else if (topP <= 0.9) {
-            styleInstructions += ', avant-garde artistic style, experimental composition, radical artistic innovation';
+        // Top-P based technical specifications
+        if (topP <= 0.5) {
+            photographicEnhancement += ', 85mm portrait lens, f/2.8 aperture, professional studio backdrop, controlled lighting environment';
+        } else if (topP <= 0.8) {
+            photographicEnhancement += ', premium lens optics, perfect depth of field, professional color correction, studio-grade lighting equipment, flawless composition';
         } else {
-            styleInstructions += ', completely experimental art form, revolutionary composition, chaotic artistic fusion';
+            photographicEnhancement += ', cutting-edge camera technology, impossible optical perfection, divine lighting conditions, transcendent photographic clarity';
         }
 
-        // Top-K based visual complexity
-        if (topK <= 30) {
-            styleInstructions += ', minimalist composition, clean simple lines, pure geometric forms, stark visual simplicity';
-        } else if (topK <= 50) {
-            styleInstructions += ', moderate visual complexity, balanced detailed composition, structured artistic elements';
+        // Top-K based detail level
+        if (topK <= 40) {
+            photographicEnhancement += ', clean professional photography, sharp focus, minimal post-processing, natural realistic colors';
         } else if (topK <= 70) {
-            styleInstructions += ', detailed rich composition, complex layered textures, intricate visual patterns';
-        } else if (topK <= 90) {
-            styleInstructions += ', highly complex detailed composition, elaborate intricate textures, maximum visual density';
+            photographicEnhancement += ', hyperrealistic detail capture, every texture visible, professional retouching, magazine-quality finish';
         } else {
-            styleInstructions += ', overwhelmingly complex composition, hyperdetailed intricate textures, maximum possible visual complexity';
+            photographicEnhancement += ', impossible level of detail, every pore and texture captured, supernatural clarity, beyond human vision quality';
         }
 
-        // Combine with dramatic parameter-influenced seed
-        return `${basePrompt}${styleInstructions}, rendering style: ${tempMod}, artistic approach: ${topPMod}, composition complexity: ${topKMod}, parameter-seed:${tempSeed}-${topPSeed}-${topKSeed}-${microSeed}`;
+        // Core photorealism keywords that MUST be included
+        const coreRealism = ', photorealistic, hyperrealistic, ultra-detailed, high resolution, professional photography, studio quality, 8K resolution, perfect lighting, crystal clear, sharp focus, realistic skin texture, natural colors, professional color grading';
+
+        // Combine everything for maximum realism
+        return `${basePrompt}${coreRealism}${photographicEnhancement}, technical execution: ${tempMod}, photographic approach: ${topPMod}, detail level: ${topKMod}, photo-seed:${tempSeed}-${topPSeed}-${topKSeed}-${microSeed}`;
     }
 
     generateParameterSeed(temp, topP, topK) {
@@ -1233,11 +1417,26 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             return;
         }
 
-        // Get parameter values
-        const temp = parseFloat(document.getElementById('temperature')?.value || 0.7);
-        const topP = parseFloat(document.getElementById('topP')?.value || 0.9);
-        const topK = parseInt(document.getElementById('topK')?.value || 50);
-        const selectedModel = document.getElementById('aiModel')?.value || 'flux';
+        // Get parameter values based on technique
+        let temp, topP, topK, selectedModel;
+        
+        if (technique === 'few-shot') {
+            temp = parseFloat(document.getElementById('fewShotTemperature')?.value || 0.3);
+            topP = parseFloat(document.getElementById('fewShotTopP')?.value || 0.9);
+            topK = parseInt(document.getElementById('fewShotTopK')?.value || 70);
+            selectedModel = document.getElementById('fewShotAiModel')?.value || 'flux';
+        } else if (technique === 'chain-thought') {
+            temp = parseFloat(document.getElementById('chainThoughtTemperature')?.value || 0.3);
+            topP = parseFloat(document.getElementById('chainThoughtTopP')?.value || 0.9);
+            topK = parseInt(document.getElementById('chainThoughtTopK')?.value || 70);
+            selectedModel = document.getElementById('chainThoughtAiModel')?.value || 'flux';
+        } else {
+            // Zero-shot and others use default controls
+            temp = parseFloat(document.getElementById('temperature')?.value || 0.3);
+            topP = parseFloat(document.getElementById('topP')?.value || 0.9);
+            topK = parseInt(document.getElementById('topK')?.value || 70);
+            selectedModel = document.getElementById('aiModel')?.value || 'flux';
+        }
 
         // Show loading
         const loadingEl = document.getElementById('buildLoading');
@@ -1319,19 +1518,19 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     // Zero-Shot Examples
     loadZeroShotGood() {
-        const prompt = `Create a professional digital artwork of a majestic dragon with emerald scales, breathing golden fire, in a mystical forest setting with cinematic lighting, high detail, fantasy art style`;
+        const prompt = `Professional corporate headshot of confident technology executive in charcoal business suit, sitting at modern workspace with computer screens background, shot with 85mm portrait lens, studio lighting setup, commercial photography quality, crystal clear focus, realistic skin texture, magazine cover quality`;
         document.getElementById('zeroShotPrompt').value = prompt;
         this.showNotification('Good zero-shot example loaded!', 'success');
     }
 
     loadZeroShotBad() {
-        const prompt = `dragon`;
+        const prompt = `professional person`;
         document.getElementById('zeroShotPrompt').value = prompt;
         this.showNotification('Poor zero-shot example loaded - notice how vague it is!', 'warning');
     }
 
     loadZeroShotBest() {
-        const prompt = `Create a breathtaking digital masterpiece: an ancient emerald dragon with iridescent scales reflecting ethereal moonlight, breathing luminous golden flames that dance through a mystical enchanted forest. Feature dramatic cinematic lighting with volumetric god rays piercing through magical mists, hyperrealistic detail with every scale meticulously rendered, atmospheric perspective creating depth, award-winning fantasy concept art quality, trending on ArtStation, 8K resolution, museum-quality detail level, professional game industry standard`;
+        const prompt = `Create a stunning professional portrait masterpiece: a distinguished senior architect with confident expression and thoughtful demeanor, wearing modern casual business attire with architectural blueprints visible in background, standing in contemporary design studio with natural lighting from large windows. Capture with professional medium format camera using 85mm portrait lens at f/2.8 aperture, studio-quality lighting setup with key light and subtle fill light, achieving crystal-clear focus on subject's eyes and natural skin texture. Render in commercial photography quality with magazine-cover precision, showcasing professional expertise and creative competence in stunning high-resolution detail.`;
         document.getElementById('zeroShotPrompt').value = prompt;
         this.showNotification('Best practice zero-shot example loaded!', 'success');
     }
@@ -1340,12 +1539,12 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     loadFewShotGood() {
         // Load examples into the component fields
         const examples = [
-            'Ancient Fire Dragon: Massive crimson dragon with weathered obsidian scales, breathing intense golden flames while perched on volcanic rocks, dramatic backlighting, cinematic composition, hyperrealistic detail.',
-            'Ice Phoenix: Elegant white phoenix with crystalline feathers that refract light like prisms, surrounded by swirling frost magic and aurora-like energy, ethereal atmosphere, professional fantasy art quality.',
-            'Forest Unicorn: Graceful silver unicorn with flowing pearl-white mane, standing in an enchanted grove with magical fireflies and glowing mushrooms, soft rim lighting, mystical ambiance, portfolio-quality artwork.'
+            'Software Engineer: Focused developer at modern workstation with multiple monitors displaying code, wearing casual tech company attire, natural office lighting, professional technology magazine photography style.',
+            'Environmental Scientist: Dedicated researcher in field gear collecting samples outdoors, surrounded by natural landscape with scientific equipment, golden hour lighting, documentary photography quality.',
+            'Financial Advisor: Professional consultant in business attire reviewing documents at polished conference table, modern office setting with city views, corporate photography standard.'
         ];
         
-        const task = 'create a storm griffin with lightning-infused feathers, commanding thunder clouds from a mountain peak during an epic thunderstorm, with dramatic lighting and cinematic composition.';
+        const task = 'create a professional teacher in classroom setting with educational materials and natural teaching environment, inspiring educational magazine photography quality.';
         
         this.loadFewShotComponents(examples, task);
         this.showNotification('Good few-shot example loaded!', 'success');
@@ -1381,11 +1580,11 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     loadFewShotBad() {
         const examples = [
-            'Dragons are cool.',
-            'Unicorns are pretty.'
+            'Engineers work with computers.',
+            'Teachers help students.'
         ];
         
-        const task = 'Make a griffin.';
+        const task = 'Make a professional.';
         
         this.loadFewShotComponents(examples, task);
         this.showNotification('Poor few-shot example loaded - see the inconsistent pattern!', 'warning');
@@ -1393,13 +1592,13 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     loadFewShotBest() {
         const examples = [
-            'Celestial Dragon Lord: Majestic platinum dragon with constellation patterns etched into cosmic scales, commanding stellar energy while floating through nebula clouds, divine backlighting creating sacred atmosphere, museum-quality hyperrealistic rendering, trending on ArtStation.',
-            'Shadowmere Phoenix: Ethereal dark phoenix with obsidian feathers edged in violet flame, rising from mystical shadowlands with trailing starfire, dramatic chiaroscuro lighting, professional concept art for AAA gaming, award-winning composition.',
-            'Crystal Stag Guardian: Ancient stag with translucent antlers containing miniature galaxies, standing sentinel in enchanted crystal caverns with prismatic light reflections, soft volumetric lighting, portfolio masterpiece quality, cinema-grade visual effects standard.',
-            'Primal Earth Elemental: Colossal humanoid figure composed of living mountain stone and molten magma veins, wielding forests as armor and waterfalls as flowing robes, epic scale demonstration with tectonic power, award-winning environmental concept art for blockbuster films.'
+            'Distinguished Technology Leader: Senior software architect in smart casual attire at modern tech workspace, surrounded by multiple monitors and innovation tools, natural office lighting with urban backdrop, technology magazine photography quality.',
+            'Expert Research Scientist: Accomplished laboratory researcher in professional lab coat, working with advanced scientific equipment in modern research facility, controlled lighting environment, scientific publication photography standard.',
+            'Master Craftsperson Profile: Skilled artisan in workshop setting with traditional tools and handcrafted works, natural lighting from workshop windows, artisan magazine photography style, authentic documentation quality.',
+            'Professional Educator Portrait: Experienced instructor in classroom environment with teaching materials and educational technology, inspiring natural lighting, education publication photography standard, portfolio-quality composition.'
         ];
         
-        const task = 'create a tempest leviathan with storm-cloud hide and lightning coursing through translucent fins, emerging from hurricane seas with dramatic atmospheric effects and professional cinematography quality.';
+        const task = 'create a professional consultant in modern office setting with business materials and collaborative workspace, natural lighting and corporate magazine photography quality.';
         
         this.loadFewShotComponents(examples, task);
         this.showNotification('Best practice few-shot example loaded!', 'success');
@@ -1408,15 +1607,15 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     // Chain-of-Thought Examples
     loadChainThoughtGood() {
         const steps = [
-            'Choose the main subject - A wise ancient wizard, depicting years of magical knowledge and experience through weathered yet noble features.',
-            'Define the setting - A grand mystical library with floating ancient tomes, glowing magical circles, and towering bookshelves filled with arcane knowledge.',
-            'Establish the mood and atmosphere - Warm, scholarly ambiance with a sense of ancient wisdom and magical power, conveying both serenity and immense knowledge.',
-            'Design the lighting setup - Golden candlelight as primary illumination, with magical sparkles and glowing runes providing accent lighting, creating depth and mystical atmosphere.',
-            'Add specific details - Elaborate star-covered robes, an ornate crystal staff emanating soft light, ancient leather-bound tomes with glowing text, mystical symbols floating in the air.',
-            'Ensure technical quality - Hyperrealistic digital painting style, cinematic composition with rule of thirds, professional lighting techniques, 8K resolution detail.'
+            'Choose the main subject - A professional data scientist with confident expression, depicting years of analytical expertise and innovation through competent yet approachable features.',
+            'Define the setting - A modern technology lab with data visualization screens, analytical tools, and collaborative research environment.',
+            'Establish the mood and atmosphere - Professional, innovative, focused atmosphere with a sense of analytical expertise and problem-solving capability, conveying both skill and creativity.',
+            'Design the lighting setup - Natural office lighting as primary illumination, with screen glow providing ambient lighting, creating clear visibility and modern professional atmosphere.',
+            'Add specific details - Smart casual professional attire, data analysis tools, research materials in background, clean modern appearance reflecting contemporary analytical work.',
+            'Ensure technical quality - Professional photography style, commercial composition with proper framing, natural lighting techniques, high-resolution detail.'
         ];
         
-        const final = 'Result: Create a wise ancient wizard in his grand mystical library, surrounded by floating magical tomes and golden candlelight, wearing elaborate star-covered robes and holding a glowing crystal staff, with hyperrealistic detail and cinematic composition.';
+        const final = 'Result: Create a professional data scientist in modern tech lab, surrounded by data visualization and analytical tools, achieving commercial photography quality and professional composition.';
         
         this.loadChainThoughtComponents(steps, final);
         this.showNotification('Good chain-of-thought example loaded!', 'success');
@@ -1452,42 +1651,38 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     loadChainThoughtBad() {
         const steps = [
-            'I want a wizard.',
-            'Make it look cool.'
+            'I want a professional person.',
+            'Make them look smart.'
         ];
         
-        const final = 'Add some magic stuff.';
+        const final = 'Add some work stuff.';
         
         this.loadChainThoughtComponents(steps, final);
         this.showNotification('Poor chain-of-thought example loaded - no systematic thinking!', 'warning');
     }
 
     loadChainThoughtBest() {
-        const prompt = `Let's architect this masterpiece through systematic analysis for professional portfolio quality:
-
-Step 1: Subject Analysis - Ancient archmage character study: weathered sage with millennia of wisdom, piercing ethereal eyes reflecting cosmic knowledge, noble bearing despite advanced age, facial features telling stories of magical mastery.
-
-Step 2: Environmental Design - Sacred mystical sanctum: vast circular library with impossible architecture defying physics, floating islands of books connected by bridges of pure light, walls lined with knowledge spanning dimensions, central altar of crystalline formation.
-
-Step 3: Atmospheric Engineering - Transcendent scholarly ambiance: warm golden illumination suggesting eternal study, whispers of ancient magic in the air, sense of timeless sanctuary where reality bends to wisdom, peaceful yet overwhelmingly powerful presence.
-
-Step 4: Lighting Architecture - Multi-layered illumination system: primary warm candlelight establishing base mood, secondary magical glow from runes and tomes providing accent lighting, tertiary starlight filtering through mystical windows, quaternary staff luminescence as focal point.
-
-Step 5: Detail Specification - Hyperrealistic elements: robes woven from starlight and midnight, staff carved from world-tree heartwood with embedded constellation gems, tomes with living text that shifts and glows, floating magical symbols writing themselves in luminous script.
-
-Step 6: Technical Excellence - Museum-quality execution: 8K hyperrealistic digital painting with photographic detail, cinematic composition utilizing golden ratio and rule of thirds, professional color grading with warm/cool balance, award-winning concept art standard.
-
-Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum, surrounded by impossible architecture of floating books and crystalline formations, bathed in layered golden and magical lighting, wearing starlight robes while wielding a cosmic staff, rendered with museum-quality hyperrealistic detail and cinematic composition worthy of the finest fantasy art galleries.`;
-        document.getElementById('chainThoughtPrompt').value = prompt;
+        const steps = [
+            'Subject Analysis - Distinguished senior research director character study: experienced professional with confident bearing, intelligent eyes reflecting scientific expertise, approachable yet authoritative demeanor, facial features conveying competence and innovation.',
+            'Environmental Design - State-of-the-art research facility: modern laboratory with advanced scientific equipment, clean surfaces and professional research instrumentation, contemporary scientific architecture with glass and steel elements.',
+            'Atmospheric Engineering - Professional research ambiance: bright, clean laboratory lighting suggesting precision and discovery, sense of cutting-edge scientific practice, atmosphere of competence and innovation, organized yet dynamic environment.',
+            'Lighting Architecture - Multi-layered professional illumination: primary bright laboratory overhead lighting establishing clean visibility, secondary equipment accent lighting, tertiary ambient lighting from computer screens, quaternary natural light from windows creating depth.',
+            'Detail Specification - Professional elements: contemporary lab coat with proper fit, research materials positioned naturally, scientific instruments authentically arranged, modern professional appearance reflecting current research standards.',
+            'Technical Excellence - Commercial photography execution: Shot with professional camera equipment using 85mm portrait lens, studio-quality lighting setup with controlled shadows, magazine-quality composition utilizing rule of thirds, professional color grading maintaining natural tones.'
+        ];
+        
+        const final = 'Final Synthesis: Create a distinguished senior research director in modern laboratory, surrounded by state-of-the-art scientific equipment and bright research lighting, wearing professional lab attire with authentic scientific details, captured with commercial photography quality and professional composition worthy of science publication covers.';
+        
+        this.loadChainThoughtComponents(steps, final);
         this.showNotification('Best practice chain-of-thought example loaded!', 'success');
     }
 
     // Role-Play Examples
     loadRolePlayGood() {
-        const role = 'master concept artist for blockbuster fantasy films with 15 years of experience creating iconic creatures for major studios';
-        const context = 'Your portfolio includes award-winning designs for dragons, magical beasts, and mystical beings that have become cultural icons. Create a piece that would impress directors and producers';
-        const task = 'A breathtaking landscape showing an ancient floating city among the clouds, with intricate architecture and dramatic lighting that conveys both majesty and mystery';
-        const audience = 'This piece needs to meet Hollywood production standards for a big-budget fantasy epic';
+        const role = 'professional corporate photographer specializing in technology industry portraits with 15 years of experience creating compelling professional images for major tech companies';
+        const context = 'Your portfolio includes award-winning corporate photography for technology firms, business magazines, and innovation campaigns. Create a piece that would impress company executives and industry publications';
+        const task = 'A compelling professional portrait of a senior software architect in modern workspace, with authentic technology tools and lighting that conveys both expertise and innovation';
+        const audience = 'This piece needs to meet technology magazine publication standards for a major industry feature';
         
         this.loadRolePlayComponents(role, context, task, audience);
         this.showNotification('Good role-play example loaded!', 'success');
@@ -1514,10 +1709,10 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
     }
 
     loadRolePlayBest() {
-        const role = 'lead senior concept artist at Industrial Light & Magic with 20+ years of experience designing for Star Wars, Marvel, and other legendary franchises. You\'ve won multiple VES Awards for outstanding visual effects artistry and your creature designs have been featured in museums worldwide';
-        const context = 'Studio executives specifically request your expertise for the most challenging and iconic character designs. Your current assignment is for the new fantasy epic "Chronicles of the Celestial Realm"';
-        const task = 'Design an ancient dragon emperor that will serve as the film\'s primary mystical guardian. This character must convey 10,000 years of wisdom, cosmic power, and benevolent protection of the realm';
-        const audience = 'Museum-quality concept art that will be used for toy lines, promotional materials, and art books. The design must be iconic enough to become a cultural symbol while meeting the technical demands of modern VFX production';
+        const role = 'lead senior commercial photographer at Getty Images with 20+ years of experience shooting for Fortune 500 companies, educational institutions, and international publications. You\'ve won multiple photography awards for outstanding professional portraiture and your work has been featured in major business magazines worldwide';
+        const context = 'Corporate executives specifically request your expertise for the most challenging and prestigious professional portraits. Your current assignment is for the new university campaign "Innovation in Education"';
+        const task = 'Create a distinguished portrait of the dean of engineering that will serve as the campaign\'s primary academic authority figure. This portrait must convey decades of educational expertise, professional competence, and inspiring academic leadership';
+        const audience = 'Museum-quality professional photography that will be used for university websites, academic publications, and marketing materials. The portrait must be iconic enough to become a symbol of educational excellence while meeting the technical demands of modern commercial photography';
         
         this.loadRolePlayComponents(role, context, task, audience);
         this.showNotification('Best practice role-play example loaded!', 'success');
@@ -1526,13 +1721,13 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
     // Structured Examples
     loadStructuredGood() {
         const components = {
-            subject: 'Ethereal fairy queen with delicate translucent wings and flowing silver hair, radiating otherworldly beauty and ancient wisdom',
-            style: 'Hyperrealistic digital painting with fantasy art elements, reminiscent of classic Pre-Raphaelite paintings but with modern technical execution',
-            composition: 'Portrait orientation, three-quarter view angle, rule of thirds positioning with subject\'s eyes at upper intersection point, elegant pose with graceful hand positioning',
-            lighting: 'Soft magical glow emanating from the subject\'s skin, gentle rim lighting to separate subject from background, warm golden key light with cool blue fill light for depth',
-            mood: 'Serene and mystical atmosphere, conveying both ethereal beauty and ancient power, peaceful yet commanding presence',
-            details: 'Gossamer-thin wings with intricate vein patterns, crown of living flowers that seem to bloom in real-time, flowing gown that appears to be made of starlight and morning mist, subtle magical particles floating around the figure',
-            technical: '8K resolution, professional artwork quality, trending on ArtStation, award-winning composition, museum-quality detail level, perfect color harmony and balance',
+            subject: 'Professional urban planner with confident expression and thoughtful demeanor, radiating planning expertise and community-focused vision',
+            style: 'Architectural documentary photography with commercial elements, reminiscent of professional urban development campaigns but with modern technical execution',
+            composition: 'Portrait orientation, direct eye contact angle, rule of thirds positioning with subject\'s eyes at upper intersection point, confident pose with professional presentation',
+            lighting: 'Natural office lighting from large windows, gentle rim lighting to separate subject from background, warm key light with cool city view fill light for depth',
+            mood: 'Professional and visionary atmosphere, conveying both planning expertise and community focus, confident yet approachable presence',
+            details: 'Modern professional attire with architectural plans visible, city planning materials naturally positioned, urban development tools in background, clean contemporary appearance',
+            technical: 'Shot with 85mm portrait lens, commercial photography quality, magazine-worthy composition, professional color grading, sharp focus with natural lighting',
             additional: ''
         };
         
@@ -1556,11 +1751,11 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
 
     loadStructuredBad() {
         const components = {
-            subject: 'A fairy',
+            subject: 'A doctor',
             style: '',
             composition: '',
             lighting: '',
-            mood: 'Pretty and magical',
+            mood: 'Professional and medical',
             details: '',
             technical: '',
             additional: ''
@@ -1572,14 +1767,14 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
 
     loadStructuredBest() {
         const components = {
-            subject: 'Celestial phoenix empress with wings spanning cosmic dimensions, feathers composed of living starfire and nebula dust, ancient entity embodying rebirth and cosmic cycles, bearing crown of crystallized supernovas',
-            style: 'Museum-quality hyperrealistic digital painting blending classical academic technique with cutting-edge fantasy artistry, influences from Baroque masters and contemporary concept art legends, executed with photographic precision yet maintaining painterly soul',
-            composition: 'Dramatic diagonal composition utilizing golden ratio spiral, subject positioned at primary focal intersection, wings creating dynamic S-curve leading eye through frame, secondary elements following rule of thirds, foreground-midground-background clearly defined for maximum depth',
-            lighting: 'Complex multi-source illumination architecture - primary cosmic radiation from subject creating warm luminosity, secondary starfield providing cool accent lighting, tertiary atmospheric scattering for depth, quaternary rim lighting defining subject silhouette, all balanced for dramatic chiaroscuro effect',
-            mood: 'Transcendent majesty combined with primordial power, conveying both nurturing maternal energy and awesome cosmic force, atmosphere of rebirth and eternal cycles, inspiring awe while maintaining approachable beauty',
-            details: 'Individual feathers rendered with microscopic detail showing internal flame structures, eyes reflecting entire galaxies with swirling spiral arms, crown jewels each containing miniature stellar formations, trailing cosmic dust particles with physically accurate light scattering, background nebulae with authentic astronomical color palettes',
-            technical: '8K resolution with 16-bit color depth, professional museum archival quality, trending #1 on all major art platforms, award-winning international competition standard, technical execution rivaling finest classical paintings, color theory implementing advanced harmony principles, perfect anatomical accuracy despite fantastical subject matter',
-            additional: 'Deep space setting with accurately rendered star clusters, distant galaxies visible with proper atmospheric perspective, floating cosmic debris following orbital mechanics, aurora-like energy fields creating depth layers'
+            subject: 'Distinguished senior sustainability consultant with thoughtful expression and confident bearing, hands positioned naturally while reviewing environmental data, embodying decades of environmental expertise and community-focused solutions, wearing contemporary professional attire',
+            style: 'Museum-quality commercial photography blending classical portrait technique with cutting-edge environmental documentary artistry, influences from Annie Leibovitz and contemporary sustainability photographers, executed with photographic precision and professional standards',
+            composition: 'Professional portrait composition utilizing golden ratio positioning, subject positioned at primary focal intersection, environmental tools creating supporting visual elements leading eye through frame, background elements following rule of thirds, foreground-midground-background clearly defined for maximum professional depth',
+            lighting: 'Complex multi-source professional illumination architecture - primary natural window lighting creating authentic visibility, secondary LED accent lighting providing sustainable illumination, tertiary ambient office lighting for depth, quaternary computer screen glow defining modern workspace atmosphere, all balanced for professional yet approachable effect',
+            mood: 'Professional excellence combined with environmental consciousness, conveying both sustainability expertise and approachable consultation manner, atmosphere of cutting-edge environmental solutions and trusted guidance, inspiring confidence while maintaining authentic warmth',
+            details: 'Individual fabric textures in sustainable professional attire rendered with precision, environmental charts positioned naturally, renewable energy materials ready for presentation, sustainability tools authentically arranged, clean professional appearance, realistic details showing expertise and dedication',
+            technical: 'Shot with professional medium format camera using 85mm portrait lens, commercial photography archival quality, magazine cover standard, award-winning professional composition, technical execution rivaling finest commercial portraits, color theory implementing natural harmony, perfect professional authenticity',
+            additional: 'Modern sustainability office setting with environmental planning materials, renewable energy displays with proper eco-conscious aesthetics, authentic green technology environment following professional environmental standards, subtle depth of field isolating subject'
         };
         
         this.loadStructuredComponents(components);
@@ -2598,50 +2793,50 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 type: 'assignment',
                 student: 'Alice Chen',
                 technique: 'Structured',
-                prompt: 'SUBJECT: Majestic dragon with emerald scales STYLE: Fantasy digital art LIGHTING: Dramatic golden hour MOOD: Powerful and ancient',
-                imageUrl: 'https://image.pollinations.ai/prompt/majestic%20emerald%20dragon%20fantasy%20digital%20art%20golden%20hour%20lighting?width=512&height=512&seed=12345&nologo=true',
+                prompt: 'SUBJECT: Professional female surgeon in scrubs STYLE: Medical documentary photography LIGHTING: Hospital operating room lighting COMPOSITION: Medium shot, confident pose TECHNICAL: Shot with 85mm lens, shallow depth of field, clinical precision',
+                imageUrl: 'https://image.pollinations.ai/prompt/professional%20female%20surgeon%20scrubs%20medical%20documentary%20photography%20hospital%20operating%20room%20lighting?width=512&height=512&seed=12345&nologo=true',
                 parameters: { temp: 0.7, topP: 0.9, topK: 50, model: 'flux' },
-                analysis: 'Used structured prompting to create a detailed fantasy dragon with professional lighting.',
+                analysis: 'Used structured prompting to create photorealistic medical professional portrait with technical specifications.',
                 submittedAt: new Date().toISOString()
             },
             {
                 type: 'assignment',
                 student: 'Bob Martinez',
                 technique: 'Few-Shot',
-                prompt: 'Following the pattern of mythical creatures: Ancient phoenix with crystalline feathers, surrounded by ethereal flames, mystical forest setting',
-                imageUrl: 'https://image.pollinations.ai/prompt/ancient%20phoenix%20crystalline%20feathers%20ethereal%20flames%20mystical%20forest?width=512&height=512&seed=67890&nologo=true',
-                parameters: { temp: 0.8, topP: 0.8, topK: 60, model: 'flux-realism' },
-                analysis: 'Applied few-shot learning with consistent mythical creature examples.',
+                prompt: 'Professional headshots pattern: 1. Corporate CEO in navy suit, office background 2. Chef in white uniform, restaurant kitchen 3. Architect with blueprints, modern building site. Now create: Mountain climber with professional gear and weathered face, shot at alpine base camp with dramatic mountain backdrop',
+                imageUrl: 'https://image.pollinations.ai/prompt/mountain%20climber%20professional%20gear%20weathered%20face%20alpine%20base%20camp%20dramatic%20mountain%20backdrop?width=512&height=512&seed=67890&nologo=true',
+                parameters: { temp: 0.8, topP: 0.8, topK: 60, model: 'flux' },
+                analysis: 'Applied few-shot learning with consistent professional portrait examples, achieving photorealistic quality.',
                 submittedAt: new Date().toISOString()
             },
             {
                 type: 'assignment',
                 student: 'Carol Zhang',
                 technique: 'Role Playing',
-                prompt: 'As a master concept artist for fantasy films: Create a breathtaking unicorn in an enchanted grove with magical fireflies, cinematic composition, award-winning quality',
-                imageUrl: 'https://image.pollinations.ai/prompt/breathtaking%20unicorn%20enchanted%20grove%20magical%20fireflies%20cinematic%20composition?width=512&height=512&seed=13579&nologo=true',
-                parameters: { temp: 0.6, topP: 0.9, topK: 70, model: 'flux-3d' },
-                analysis: 'Role-played as a professional concept artist to achieve cinematic quality.',
+                prompt: 'You are a world-renowned fashion photographer shooting for Vogue magazine cover. Your portfolio includes iconic portraits of celebrities and models. Create a stunning portrait of an elegant ballet dancer in flowing white tutu, captured mid-performance leap with dramatic stage lighting, shot with medium format camera for maximum detail and professional magazine quality',
+                imageUrl: 'https://image.pollinations.ai/prompt/elegant%20ballet%20dancer%20white%20tutu%20mid%20performance%20leap%20dramatic%20stage%20lighting%20medium%20format%20camera?width=512&height=512&seed=13579&nologo=true',
+                parameters: { temp: 0.6, topP: 0.9, topK: 70, model: 'flux' },
+                analysis: 'Role-played as professional fashion photographer to achieve magazine-quality portrait with technical specifications.',
                 submittedAt: new Date().toISOString()
             },
             {
                 type: 'assignment',
                 student: 'David Kim',
                 technique: 'Chain-of-Thought',
-                prompt: 'Step 1: Choose a wise griffin. Step 2: Set in mountain peaks. Step 3: Add storm clouds. Step 4: Include dramatic lighting. Result: Wise griffin perched on mountain peak during epic thunderstorm',
-                imageUrl: 'https://image.pollinations.ai/prompt/wise%20griffin%20mountain%20peak%20epic%20thunderstorm%20dramatic%20lighting?width=512&height=512&seed=24680&nologo=true',
+                prompt: 'Let me think step by step about creating a professional portrait: Step 1: Choose subject - Distinguished elderly businessman with silver hair and sharp features. Step 2: Consider setting - Modern glass office with city skyline background. Step 3: Plan lighting - Professional studio lighting with key light and fill light. Step 4: Camera specs - Shot with 85mm portrait lens, shallow depth of field. Step 5: Quality requirements - Commercial photography standard with perfect exposure. Result: Distinguished elderly CEO with silver hair in perfectly tailored charcoal suit, standing confidently in modern glass office with city skyline background, shot with professional studio lighting and 85mm lens for commercial photography quality',
+                imageUrl: 'https://image.pollinations.ai/prompt/distinguished%20elderly%20CEO%20silver%20hair%20charcoal%20suit%20modern%20glass%20office%20city%20skyline%20professional%20studio%20lighting?width=512&height=512&seed=24680&nologo=true',
                 parameters: { temp: 0.5, topP: 0.7, topK: 40, model: 'turbo' },
-                analysis: 'Used systematic chain-of-thought reasoning to build the scene step by step.',
+                analysis: 'Used systematic chain-of-thought reasoning to build photorealistic business portrait with technical specifications.',
                 submittedAt: new Date().toISOString()
             },
             {
                 type: 'assignment',
                 student: 'Emma Wilson',
                 technique: 'Zero-Shot',
-                prompt: 'Ethereal fairy queen with gossamer wings and flower crown, sitting in a moonlit garden with glowing mushrooms, hyperrealistic digital painting, magical atmosphere',
-                imageUrl: 'https://image.pollinations.ai/prompt/ethereal%20fairy%20queen%20gossamer%20wings%20flower%20crown%20moonlit%20garden%20glowing%20mushrooms?width=512&height=512&seed=97531&nologo=true',
-                parameters: { temp: 0.9, topP: 0.8, topK: 80, model: 'flux-anime' },
-                analysis: 'Created detailed zero-shot prompt with rich descriptive language.',
+                prompt: 'Professional headshot of confident young chef in pristine white uniform with chef hat, standing in modern restaurant kitchen with stainless steel surfaces and professional equipment in background, natural lighting from large windows, shot with professional DSLR camera, commercial photography quality, sharp focus, realistic skin texture, magazine cover quality',
+                imageUrl: 'https://image.pollinations.ai/prompt/professional%20headshot%20confident%20young%20chef%20white%20uniform%20modern%20restaurant%20kitchen%20stainless%20steel%20professional%20DSLR?width=512&height=512&seed=97531&nologo=true',
+                parameters: { temp: 0.9, topP: 0.8, topK: 80, model: 'flux' },
+                analysis: 'Created detailed zero-shot prompt with professional photography specifications and technical quality requirements.',
                 submittedAt: new Date().toISOString()
             }
         ];

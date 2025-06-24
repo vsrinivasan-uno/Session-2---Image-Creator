@@ -320,8 +320,12 @@ body {
 }
 
 .param-control.recommendation {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
-    color: white;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    grid-column: 1 / -1;
+    width: 100%;
 }
 
 .param-control label {
@@ -333,7 +337,7 @@ body {
 }
 
 .param-control.recommendation label {
-    color: white;
+    display: none;
 }
 
 .param-control input[type="range"] {
@@ -433,46 +437,76 @@ body {
 }
 
 .param-recommendation {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin-top: 0.75rem;
-    font-weight: 400;
-    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.param-recommendation::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--primary-color), rgba(var(--primary-color), 0.5));
-    transition: all 0.4s ease;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 24px;
+    transition: all 0.2s ease;
+    margin-top: 16px;
+    width: 100%;
+    display: block;
 }
 
 .param-recommendation:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.recommendation-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.recommendation-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
 }
 
 .recommendation-icon {
-    font-size: 1.1rem;
-    margin-right: 0.5rem;
-    opacity: 0.8;
+    font-size: 18px;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.recommendation-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1e293b;
+    margin: 0;
 }
 
 .recommendation-text {
-    flex: 1;
+    font-weight: 400;
+    color: #475569;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.scenario-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scenario-tag {
+    background: #e2e8f0;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.scenario-tag i {
+    font-size: 0.7rem;
 }
 
 /* Technique Selection */
@@ -1194,28 +1228,36 @@ body {
 }
 
 .close-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: #e11d48; /* Solid red background for visibility */
+    border: 2px solid #f87171;
     color: white;
     font-size: 1.25rem;
+    font-weight: bold;
     cursor: pointer;
     padding: var(--spacing-sm);
-    border-radius: var(--radius);
+    border-radius: 50%; /* Make it circular */
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    z-index: 2;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3);
 }
 
 .close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: #dc2626;
+    border-color: #f87171;
     transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.5);
+}
+
+.close-btn:active {
+    transform: scale(0.95);
 }
 
 .modal-body {
@@ -1367,8 +1409,8 @@ body {
     }
 
     .param-control.recommendation {
-        grid-column: 1 / -1;
-    }
+    margin-top: var(--spacing-lg);
+}
 
     .generation-controls {
         padding: var(--spacing-md);
@@ -1387,7 +1429,24 @@ body {
     }
 
     .param-recommendation {
+        padding: 16px 18px;
+    }
+    
+    .recommendation-text {
         font-size: 0.8rem;
+    }
+    
+    .recommendation-icon {
+        font-size: 18px;
+    }
+    
+    .scenario-tags {
+        gap: 6px;
+    }
+    
+    .scenario-tag {
+        font-size: 0.7rem;
+        padding: 3px 8px;
     }
 
     .technique-tabs {
@@ -1635,6 +1694,21 @@ body {
 
 .component-section {
     margin-bottom: var(--spacing-lg);
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: var(--spacing-lg);
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.component-section h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .component-section:last-of-type {
@@ -1902,6 +1976,21 @@ body {
 .task-input {
     width: 100%;
     min-height: 80px;
+    padding: var(--spacing-md);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.2s ease;
+    background: var(--surface);
+}
+
+.task-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
 }
 
 .assignment-tips {

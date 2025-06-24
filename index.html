@@ -106,11 +106,11 @@
                                 <div class="info-grid">
                                     <div class="info-card good">
                                         <h5>✅ Good Example</h5>
-                                        <div class="example-text">Create a professional digital artwork of a majestic dragon with emerald scales, breathing golden fire, in a mystical forest setting with cinematic lighting, high detail, fantasy art style</div>
+                                        <div class="example-text">Professional corporate headshot of confident female CEO in navy blue business suit, standing in modern glass office with city skyline background, shot with 85mm portrait lens, studio lighting setup, commercial photography quality, crystal clear focus, realistic skin texture, magazine cover quality</div>
                                     </div>
                                     <div class="info-card bad">
                                         <h5>❌ Poor Example</h5>
-                                        <div class="example-text">dragon</div>
+                                        <div class="example-text">businesswoman</div>
                                     </div>
                                 </div>
 
@@ -164,8 +164,8 @@
                                         <p class="param-description">Choose the AI model for image generation. Flux provides balanced quality, Turbo prioritizes speed.</p>
                                     </div>
                                     <div class="param-control">
-                                        <label>🌡️ Temperature: <span id="tempValue">0.7</span></label>
-                                        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                                        <label>🌡️ Temperature: <span id="tempValue">0.3</span></label>
+                                        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.3">
                                         <div class="param-scale">
                                             <span class="scale-left">More Consistent</span>
                                             <span class="scale-right">More Creative</span>
@@ -182,8 +182,8 @@
                                         <p class="param-description">Controls vocabulary diversity. Lower = uses common words, Higher = explores unusual words</p>
                                     </div>
                                     <div class="param-control">
-                                        <label>🔢 Top-K: <span id="topKValue">50</span></label>
-                                        <input type="range" id="topK" min="10" max="100" step="10" value="50">
+                                        <label>🔢 Top-K: <span id="topKValue">70</span></label>
+                                        <input type="range" id="topK" min="10" max="100" step="10" value="70">
                                         <div class="param-scale">
                                             <span class="scale-left">Limited</span>
                                             <span class="scale-right">Expansive</span>
@@ -192,8 +192,16 @@
                                     </div>
                                                         <div class="param-control recommendation">
                         <div id="paramRecommendation" class="param-recommendation">
-                            <span class="recommendation-icon">✨</span>
-                            <span class="recommendation-text">Balanced creative projects with good quality control</span>
+                            <div class="recommendation-content">
+                                <div class="recommendation-header">
+                                    <span class="recommendation-icon">✨</span>
+                                    <h6 class="recommendation-title">Configuration Analysis</h6>
+                                </div>
+                                <div class="recommendation-text">Balanced creative projects with good quality control</div>
+                                <div class="scenario-tags">
+                                    <span class="scenario-tag"><i class="fas fa-briefcase"></i> Professional</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                                 </div>
@@ -215,17 +223,17 @@
                                     <div class="info-card good">
                                         <h5>✅ Good Example</h5>
                                         <div class="example-text">Examples:
-1. Ancient red dragon: Powerful crimson dragon with weathered scales, breathing intense flames
-2. Ice phoenix: Elegant white phoenix with crystalline feathers, surrounded by frost magic
-3. Forest unicorn: Graceful silver unicorn with flowing mane, standing in enchanted woods
+1. Professional surgeon: Confident female surgeon in blue scrubs, standing in modern operating room with medical equipment
+2. Corporate executive: Distinguished businessman in navy suit, sitting at glass desk in downtown office with city view
+3. Master chef: Experienced chef in white uniform, working in professional kitchen with stainless steel surfaces
 
-Following this pattern, create: [Your request]</div>
+Following this pattern, create: [Your professional portrait request]</div>
                                     </div>
                                     <div class="info-card bad">
                                         <h5>❌ Poor Example</h5>
-                                        <div class="example-text">Dragons are cool.
-Unicorns are pretty.
-Make a griffin.</div>
+                                        <div class="example-text">Doctors are important.
+Business people are successful.
+Make a photographer.</div>
                                     </div>
                                 </div>
 
@@ -300,6 +308,62 @@ Make a griffin.</div>
                                 </div>
                             </div>
                             
+                            <!-- Generation Parameters -->
+                            <div class="generation-controls">
+                                <h5>⚙️ Generation Parameters</h5>
+                                <div class="parameter-grid">
+                                    <div class="param-control">
+                                        <label>🤖 AI Model</label>
+                                        <select id="fewShotAiModel" class="model-selector">
+                                            <option value="flux">Flux (Default - Balanced)</option>
+                                            <option value="turbo">Turbo (Fast Generation)</option>
+                                        </select>
+                                        <p class="param-description">Choose the AI model for image generation. Flux provides balanced quality, Turbo prioritizes speed.</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🌡️ Temperature: <span id="fewShotTempValue">0.3</span></label>
+                                        <input type="range" id="fewShotTemperature" min="0" max="1" step="0.1" value="0.3">
+                                        <div class="param-scale">
+                                            <span class="scale-left">More Consistent</span>
+                                            <span class="scale-right">More Creative</span>
+                                        </div>
+                                        <p class="param-description">Controls the randomness in AI decisions. Lower = more predictable, Higher = more surprising</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🎯 Top-P: <span id="fewShotTopPValue">0.9</span></label>
+                                        <input type="range" id="fewShotTopP" min="0.1" max="1" step="0.1" value="0.9">
+                                        <div class="param-scale">
+                                            <span class="scale-left">Focused</span>
+                                            <span class="scale-right">Diverse</span>
+                                        </div>
+                                        <p class="param-description">Controls vocabulary diversity. Lower = uses common words, Higher = explores unusual words</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🔢 Top-K: <span id="fewShotTopKValue">70</span></label>
+                                        <input type="range" id="fewShotTopK" min="10" max="100" step="10" value="70">
+                                        <div class="param-scale">
+                                            <span class="scale-left">Limited</span>
+                                            <span class="scale-right">Expansive</span>
+                                        </div>
+                                        <p class="param-description">Limits word choices per step. Lower = simpler language, Higher = complex expressions</p>
+                                    </div>
+                                    <div class="param-control recommendation">
+                                        <div id="fewShotParamRecommendation" class="param-recommendation">
+                                            <div class="recommendation-content">
+                                                <div class="recommendation-header">
+                                                    <span class="recommendation-icon">✨</span>
+                                                    <h6 class="recommendation-title">Configuration Analysis</h6>
+                                                </div>
+                                                <div class="recommendation-text">Balanced creative projects with good quality control</div>
+                                                <div class="scenario-tags">
+                                                    <span class="scenario-tag"><i class="fas fa-briefcase"></i> Professional</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <button id="generateFewShot" class="generate-btn">
                                 <i class="fas fa-magic"></i>
                                 Generate with Few-Shot
@@ -316,18 +380,18 @@ Make a griffin.</div>
                                     <div class="info-card good">
                                         <h5>✅ Good Example</h5>
                                         <div class="example-text">Let's create this step by step:
-Step 1: Choose subject - A wise ancient wizard
-Step 2: Define setting - Grand mystical library
-Step 3: Establish mood - Warm, scholarly ambiance
-Step 4: Design lighting - Golden candlelight with magical sparkles
-Step 5: Add details - Star-covered robes, crystal staff, floating tomes
-Step 6: Ensure quality - Hyperrealistic, cinematic composition
+Step 1: Choose subject - Professional female surgeon with confident expression
+Step 2: Define setting - Modern hospital operating room with medical equipment
+Step 3: Establish mood - Professional, competent, focused atmosphere
+Step 4: Design lighting - Bright hospital lighting with overhead surgical lights
+Step 5: Add details - Blue scrubs, surgical mask around neck, stethoscope
+Step 6: Ensure quality - Professional photography, commercial grade, sharp focus
 
-Result: Create a wise ancient wizard...</div>
+Result: Create a professional female surgeon...</div>
                                     </div>
                                     <div class="info-card bad">
                                         <h5>❌ Poor Example</h5>
-                                        <div class="example-text">I want a wizard. Make it look cool. Add some magic stuff.</div>
+                                        <div class="example-text">I want a doctor. Make them look professional. Add some medical stuff.</div>
                                     </div>
                                 </div>
 
@@ -374,7 +438,7 @@ Result: Create a wise ancient wizard...</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="step-input" placeholder="First logical step (e.g., 'Choose subject - A wise ancient wizard')"></textarea>
+                                            <textarea class="step-input" placeholder="First logical step (e.g., 'Choose subject - Professional surgeon with confident expression')"></textarea>
                                         </div>
                                         <div class="step-item" data-index="1">
                                             <div class="step-item-header">
@@ -383,7 +447,7 @@ Result: Create a wise ancient wizard...</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="step-input" placeholder="Second logical step (e.g., 'Define setting - Grand mystical library')"></textarea>
+                                            <textarea class="step-input" placeholder="Second logical step (e.g., 'Define setting - Modern hospital operating room')"></textarea>
                                         </div>
                                         <div class="step-item" data-index="2">
                                             <div class="step-item-header">
@@ -392,7 +456,7 @@ Result: Create a wise ancient wizard...</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="step-input" placeholder="Third logical step (e.g., 'Establish mood - Warm, scholarly ambiance')"></textarea>
+                                            <textarea class="step-input" placeholder="Third logical step (e.g., 'Establish mood - Professional, competent atmosphere')"></textarea>
                                         </div>
                                     </div>
                                     <button class="add-step-btn" onclick="modelBuilder.addStep('chainThought')">
@@ -408,6 +472,62 @@ Result: Create a wise ancient wizard...</div>
                                 <div class="final-prompt-display">
                                     <h6>🔧 Generated Chain-of-Thought Prompt (Auto-Combined)</h6>
                                     <div id="chainThoughtFinalPrompt" class="final-prompt-text">Your prompt will appear here as you build it...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Generation Parameters -->
+                            <div class="generation-controls">
+                                <h5>⚙️ Generation Parameters</h5>
+                                <div class="parameter-grid">
+                                    <div class="param-control">
+                                        <label>🤖 AI Model</label>
+                                        <select id="chainThoughtAiModel" class="model-selector">
+                                            <option value="flux">Flux (Default - Balanced)</option>
+                                            <option value="turbo">Turbo (Fast Generation)</option>
+                                        </select>
+                                        <p class="param-description">Choose the AI model for image generation. Flux provides balanced quality, Turbo prioritizes speed.</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🌡️ Temperature: <span id="chainThoughtTempValue">0.3</span></label>
+                                        <input type="range" id="chainThoughtTemperature" min="0" max="1" step="0.1" value="0.3">
+                                        <div class="param-scale">
+                                            <span class="scale-left">More Consistent</span>
+                                            <span class="scale-right">More Creative</span>
+                                        </div>
+                                        <p class="param-description">Controls the randomness in AI decisions. Lower = more predictable, Higher = more surprising</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🎯 Top-P: <span id="chainThoughtTopPValue">0.9</span></label>
+                                        <input type="range" id="chainThoughtTopP" min="0.1" max="1" step="0.1" value="0.9">
+                                        <div class="param-scale">
+                                            <span class="scale-left">Focused</span>
+                                            <span class="scale-right">Diverse</span>
+                                        </div>
+                                        <p class="param-description">Controls vocabulary diversity. Lower = uses common words, Higher = explores unusual words</p>
+                                    </div>
+                                    <div class="param-control">
+                                        <label>🔢 Top-K: <span id="chainThoughtTopKValue">70</span></label>
+                                        <input type="range" id="chainThoughtTopK" min="10" max="100" step="10" value="70">
+                                        <div class="param-scale">
+                                            <span class="scale-left">Limited</span>
+                                            <span class="scale-right">Expansive</span>
+                                        </div>
+                                        <p class="param-description">Limits word choices per step. Lower = simpler language, Higher = complex expressions</p>
+                                    </div>
+                                    <div class="param-control recommendation">
+                                        <div id="chainThoughtParamRecommendation" class="param-recommendation">
+                                            <div class="recommendation-content">
+                                                <div class="recommendation-header">
+                                                    <span class="recommendation-icon">✨</span>
+                                                    <h6 class="recommendation-title">Configuration Analysis</h6>
+                                                </div>
+                                                <div class="recommendation-text">Balanced creative projects with good quality control</div>
+                                                <div class="scenario-tags">
+                                                    <span class="scenario-tag"><i class="fas fa-briefcase"></i> Professional</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -518,17 +638,17 @@ Result: Create a wise ancient wizard...</div>
                                 <div class="info-grid">
                                     <div class="info-card good">
                                         <h5>✅ Good Example</h5>
-                                        <div class="example-text">SUBJECT: Ethereal fairy queen with translucent wings
-STYLE: Hyperrealistic digital painting, Pre-Raphaelite influence
-COMPOSITION: Portrait, three-quarter view, rule of thirds
-LIGHTING: Soft magical glow, rim lighting, warm key light
-MOOD: Serene and mystical, ancient power
-DETAILS: Gossamer wings, flower crown, starlight gown
-TECHNICAL: 8K resolution, museum-quality detail</div>
+                                        <div class="example-text">SUBJECT: Professional female surgeon with confident expression
+STYLE: Medical documentary photography, commercial grade
+COMPOSITION: Portrait, direct eye contact, professional headshot framing
+LIGHTING: Bright hospital lighting, professional studio setup
+MOOD: Professional, competent, focused atmosphere
+DETAILS: Blue scrubs, surgical mask around neck, stethoscope
+TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                     </div>
                                     <div class="info-card bad">
                                         <h5>❌ Poor Example</h5>
-                                        <div class="example-text">Make a fairy. She should be pretty and magical.</div>
+                                        <div class="example-text">Make a doctor. They should look professional and medical.</div>
                                     </div>
                                 </div>
 
@@ -570,49 +690,49 @@ TECHNICAL: 8K resolution, museum-quality detail</div>
                                         <div class="structured-header">
                                             <h6>🎨 SUBJECT</h6>
                                         </div>
-                                        <textarea id="structuredSubject" class="structure-input" placeholder="Main subject/character (e.g., 'Ethereal fairy queen with translucent wings')"></textarea>
+                                        <textarea id="structuredSubject" class="structure-input" placeholder="Main subject/character (e.g., 'Professional female surgeon with confident expression')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>🖼️ STYLE</h6>
                                         </div>
-                                        <textarea id="structuredStyle" class="structure-input" placeholder="Art style and influences (e.g., 'Hyperrealistic digital painting, Pre-Raphaelite influence')"></textarea>
+                                        <textarea id="structuredStyle" class="structure-input" placeholder="Photography style (e.g., 'Medical documentary photography, commercial grade')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>📐 COMPOSITION</h6>
                                         </div>
-                                        <textarea id="structuredComposition" class="structure-input" placeholder="Framing and layout (e.g., 'Portrait, three-quarter view, rule of thirds')"></textarea>
+                                        <textarea id="structuredComposition" class="structure-input" placeholder="Camera framing (e.g., 'Professional headshot, direct eye contact, rule of thirds')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>💡 LIGHTING</h6>
                                         </div>
-                                        <textarea id="structuredLighting" class="structure-input" placeholder="Lighting setup (e.g., 'Soft magical glow, rim lighting, warm key light')"></textarea>
+                                        <textarea id="structuredLighting" class="structure-input" placeholder="Professional lighting (e.g., 'Studio lighting setup, controlled environment, professional grade')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>🌟 MOOD</h6>
                                         </div>
-                                        <textarea id="structuredMood" class="structure-input" placeholder="Emotional atmosphere (e.g., 'Serene and mystical, ancient power')"></textarea>
+                                        <textarea id="structuredMood" class="structure-input" placeholder="Professional atmosphere (e.g., 'Confident, competent, professional demeanor')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>🔍 DETAILS</h6>
                                         </div>
-                                        <textarea id="structuredDetails" class="structure-input" placeholder="Specific elements (e.g., 'Gossamer wings, flower crown, starlight gown')"></textarea>
+                                        <textarea id="structuredDetails" class="structure-input" placeholder="Professional details (e.g., 'Medical scrubs, stethoscope, hospital equipment background')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
                                         <div class="structured-header">
                                             <h6>⚙️ TECHNICAL</h6>
                                         </div>
-                                        <textarea id="structuredTechnical" class="structure-input" placeholder="Quality specs (e.g., '8K resolution, museum-quality detail')"></textarea>
+                                        <textarea id="structuredTechnical" class="structure-input" placeholder="Camera specs (e.g., 'Shot with 85mm lens, commercial photography quality, sharp focus')"></textarea>
                                     </div>
                                     
                                     <div class="structured-item">
@@ -759,16 +879,16 @@ TECHNICAL: 8K resolution, museum-quality detail</div>
                                             </select>
                                         </div>
                                         <div class="param-control">
-                                            <label>Temperature: <span id="assignmentTempValue">0.7</span></label>
-                                            <input type="range" id="assignmentTemperature" min="0" max="1" step="0.1" value="0.7">
+                                            <label>Temperature: <span id="assignmentTempValue">0.3</span></label>
+                                            <input type="range" id="assignmentTemperature" min="0" max="1" step="0.1" value="0.3">
                                         </div>
                                         <div class="param-control">
                                             <label>Top-P: <span id="assignmentTopPValue">0.9</span></label>
                                             <input type="range" id="assignmentTopP" min="0.1" max="1" step="0.1" value="0.9">
                                         </div>
                                         <div class="param-control">
-                                            <label>Top-K: <span id="assignmentTopKValue">50</span></label>
-                                            <input type="range" id="assignmentTopK" min="10" max="100" step="10" value="50">
+                                            <label>Top-K: <span id="assignmentTopKValue">70</span></label>
+                                            <input type="range" id="assignmentTopK" min="10" max="100" step="10" value="70">
                                         </div>
                                     </div>
                                 </div>
