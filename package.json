@@ -1,0 +1,28 @@
+{
+  "name": "ai-prompt-master",
+  "version": "1.0.0",
+  "description": "AI Prompt Master - Educational platform for learning advanced AI prompting techniques",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "build": "echo 'Static site - no build step required'",
+    "start": "python -m http.server 8080"
+  },
+  "keywords": [
+    "ai",
+    "prompting",
+    "education",
+    "machine-learning",
+    "image-generation",
+    "llm"
+  ],
+  "author": "AI-CCORE",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-prompt-master.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
