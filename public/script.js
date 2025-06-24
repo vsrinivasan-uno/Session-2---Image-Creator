@@ -476,7 +476,8 @@ class LLMEducationPlatform {
             return;
         }
 
-        const button = textarea.parentElement.querySelector('.test-btn');
+        // Find the test button (it's the button after the textarea)
+        const button = textarea.parentElement.querySelector('button');
         if (!button) return;
 
         const originalText = button.innerHTML;
@@ -2091,12 +2092,16 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const topK = parseInt(document.getElementById('assignmentTopK').value);
         const selectedModel = document.getElementById('assignmentAiModel')?.value || 'flux';
 
-        // Show loading state
-        const loadingEl = document.getElementById('buildLoading');
+        // Show loading state and scroll to it
+        const loadingEl = document.getElementById('assignmentLoading');
         const resultsEl = document.getElementById('assignmentResults');
         const img = document.getElementById('assignmentImage');
         
-        if (loadingEl) loadingEl.style.display = 'block';
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+            // Scroll to loading section smoothly
+            loadingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         if (resultsEl) resultsEl.style.display = 'none';
         img.style.display = 'none';
 
@@ -2108,7 +2113,11 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             // Wait for image to load before showing results
             img.onload = () => {
                 if (loadingEl) loadingEl.style.display = 'none';
-                if (resultsEl) resultsEl.style.display = 'block';
+                if (resultsEl) {
+                    resultsEl.style.display = 'block';
+                    // Scroll to results section smoothly
+                    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
                 img.style.display = 'block';
             };
             

@@ -902,6 +902,12 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                             </div>
                         </div>
 
+                        <!-- Assignment Loading State -->
+                        <div class="loading-container" id="assignmentLoading" style="display: none;">
+                            <div class="loading-spinner"></div>
+                            <p class="loading-text">Creating your masterpiece...</p>
+                        </div>
+
                         <!-- Assignment Results -->
                         <div class="assignment-results" id="assignmentResults" style="display: none;">
                             <h3>Your Assignment Result</h3>
@@ -915,7 +921,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                         <textarea id="assignmentAnalysis" class="notes-textarea" placeholder="Reflect on your process: What technique did you use? Why did you choose these parameters? What challenges did you face? What would you do differently?"></textarea>
                                     </div>
                                     <div class="assignment-submission">
-                                        <button class="btn btn-success btn-lg" onclick="modelBuilder.submitAssignment()">
+                                        <button class="btn btn-success btn-lg" onclick="platform.submitAssignment()">
                                             <i class="fas fa-paper-plane"></i>
                                             Submit Assignment
                                         </button>
