@@ -2352,13 +2352,15 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     // Gallery & Voting Functions
     async loadDatabaseSubmissions() {
         try {
-            this.showNotification('Loading submissions from database...', 'info');
+            // Notification disabled for better UX
+        // this.showNotification('Loading submissions from database...', 'info');
             
             // Get submissions for the default assignment
             const submissions = await dbHelper.getSubmissions(1); // Using default assignment ID
             
             if (submissions.length === 0) {
-                this.showNotification('No submissions found in database yet', 'info');
+                // Notification disabled for better UX
+            // this.showNotification('No submissions found in database yet', 'info');
                 this.updateSubmissionGallery();
                 return;
             }
@@ -2402,7 +2404,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
             this.updateSubmissionGallery();
             this.checkForWinnerReveal(); // Check if winner reveal button should be shown
-            this.showNotification(`Loaded ${submissions.length} submissions from database`, 'success');
+            // Notification disabled for better UX
+            // this.showNotification(`Loaded ${submissions.length} submissions from database`, 'success');
             
         } catch (error) {
             this.showNotification('Could not load database submissions', 'warning');
@@ -2484,7 +2487,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         if (!submission) return;
 
         // Show detailed view
-        this.showNotification(`Viewing ${submission.technique} submission with ${submission.votes || this.votingData[submission.student] || 0} votes`, 'info');
+        // Notification disabled for better UX
+        // this.showNotification(`Viewing ${submission.technique} submission with ${submission.votes || this.votingData[submission.student] || 0} votes`, 'info');
     }
 
     async voteForSubmission(studentName) {
@@ -2497,7 +2501,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
         // Check if already voted
         if (this.hasVoted(submission.id)) {
-            this.showNotification('You have already voted for this submission!', 'warning');
+            // Notification disabled for better UX - voting status is shown visually
+            // this.showNotification('You have already voted for this submission!', 'warning');
             return;
         }
 
@@ -2523,7 +2528,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             const localVotes = Array.from(this.votedSubmissions);
             localStorage.setItem('voted-submissions', JSON.stringify(localVotes));
 
-            this.showNotification(`Voted for ${studentName}'s artwork! Total votes: ${voteResult.votes}`, 'success');
+            // Notification disabled for better UX - vote count is shown visually
+            // this.showNotification(`Voted for ${studentName}'s artwork! Total votes: ${voteResult.votes}`, 'success');
             
             // Force refresh the gallery to show updated vote count
             this.updateSubmissionGallery();
@@ -2537,7 +2543,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         } catch (error) {
             if (error.message.includes('already voted')) {
                 this.votedSubmissions.add(submission.id);
-                this.showNotification('You have already voted for this submission!', 'warning');
+                // Notification disabled for better UX - voting status is shown visually
+                // this.showNotification('You have already voted for this submission!', 'warning');
             } else {
                 // Fallback to local voting
                 this.voteForSubmissionLocal(studentName, submission.id);
@@ -2548,7 +2555,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     voteForSubmissionLocal(studentName, submissionId) {
         // Check local voting record
         if (this.hasVoted(submissionId)) {
-            this.showNotification('You have already voted for this submission!', 'warning');
+            // Notification disabled for better UX - voting status is shown visually
+            // this.showNotification('You have already voted for this submission!', 'warning');
             return;
         }
 
@@ -2563,7 +2571,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const localVotes = Array.from(this.votedSubmissions);
         localStorage.setItem('voted-submissions', JSON.stringify(localVotes));
         
-        this.showNotification(`Voted for ${studentName}'s artwork! Total votes: ${this.votingData[studentName]} (local mode)`, 'success');
+        // Notification disabled for better UX - vote count is shown visually
+        // this.showNotification(`Voted for ${studentName}'s artwork! Total votes: ${this.votingData[studentName]} (local mode)`, 'success');
         this.updateSubmissionGallery();
         this.checkForWinnerReveal();
     }
@@ -2580,7 +2589,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
         // Create reveal modal with PII
         this.showRevealModal(submission);
-        this.showNotification(`Revealed: This artwork was created by ${submission.student}!`, 'info');
+        // Notification disabled for better UX - reveal is shown visually in modal
+        // this.showNotification(`Revealed: This artwork was created by ${submission.student}!`, 'info');
     }
 
     viewDetails(index) {
