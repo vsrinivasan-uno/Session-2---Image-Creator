@@ -5,11 +5,6 @@ const path = require('path');
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 
-const app = express();
-
-// Trust proxy for IP detection in production
-app.set('trust proxy', true);
-
 // Database connection
 let pool;
 try {
@@ -27,10 +22,6 @@ try {
 } catch (error) {
     console.error('Database setup error:', error);
 }
-
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
 
 // Initialize database tables
 async function initializeDatabase() {
@@ -109,29 +100,18 @@ async function initializeDatabase() {
 
 // Helper function to get real IP address
 function getRealIP(req) {
-    // Enhanced IP detection for production environments
     const forwarded = req.headers['x-forwarded-for'];
     const realIP = req.headers['x-real-ip'];
-    const cfIP = req.headers['cf-connecting-ip']; // Cloudflare
-    const remoteIP = req.connection?.remoteAddress || req.socket?.remoteAddress;
+    const cfIP = req.headers['cf-connecting-ip'];
     
-    let detectedIP = req.ip || remoteIP || 'unknown';
+    let detectedIP = req.ip || req.connection?.remoteAddress || 'unknown';
     
-    // Prefer real IP sources in production
     if (cfIP) detectedIP = cfIP;
     else if (realIP) detectedIP = realIP;
     else if (forwarded) detectedIP = forwarded.split(',')[0].trim();
     
-    // Clean IPv6 mapped IPv4 addresses
     if (detectedIP.startsWith('::ffff:')) {
         detectedIP = detectedIP.substring(7);
-    }
-    
-    // For local development, simulate production IP
-    if (detectedIP === '127.0.0.1' || detectedIP === '::1' || detectedIP.startsWith('192.168.') || detectedIP.startsWith('10.')) {
-        const simulatedIPs = ['203.0.113.1', '198.51.100.1', '192.0.2.1', '203.0.113.50'];
-        const simulatedIP = simulatedIPs[Math.floor(Math.random() * simulatedIPs.length)];
-        return simulatedIP;
     }
     
     return detectedIP;
@@ -146,7 +126,11 @@ async function ensureDatabase() {
     return dbInitialized;
 }
 
-// API Routes
+// Create Express app
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.set('trust proxy', true);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -263,7 +247,7 @@ app.get('/api/classes/:class_id/assignments', async (req, res) => {
     }
 });
 
-// Get default assignment (first available assignment)
+// Get default assignment
 app.get('/api/assignments/default', async (req, res) => {
     try {
         await ensureDatabase();
@@ -314,7 +298,7 @@ app.get('/api/assignments/:assignment_id/submissions', async (req, res) => {
     }
 });
 
-// Check if voter has already voted for submissions
+// Check votes
 app.post('/api/votes/check', async (req, res) => {
     try {
         await ensureDatabase();
@@ -337,47 +321,32 @@ app.post('/api/votes/check', async (req, res) => {
     }
 });
 
-// Vote for submission with anonymous voter tracking
+// Vote for submission
 app.post('/api/submissions/:submission_id/vote', async (req, res) => {
-    const submission_id = req.params.submission_id;
-    const { voter_id, voter_fingerprint } = req.body;
-    const voter_ip = getRealIP(req);
-
     try {
         await ensureDatabase();
         
+        const submission_id = req.params.submission_id;
+        const { voter_id, voter_fingerprint } = req.body;
+        const voter_ip = getRealIP(req);
+
         if (!voter_id) {
-            res.status(400).json({ error: 'Voter ID is required' });
-            return;
+            return res.status(400).json({ error: 'Voter ID is required' });
         }
 
-        // Check for duplicate vote by voter ID
-        const existingVoteById = await pool.query(
+        // Check for duplicate vote
+        const existingVote = await pool.query(
             'SELECT id FROM votes WHERE submission_id = $1 AND voter_id = $2',
             [submission_id, voter_id]
         );
 
-        if (existingVoteById.rows.length > 0) {
-            res.status(409).json({ error: 'You have already voted for this submission' });
-            return;
-        }
-
-        // Check for duplicate vote by fingerprint
-        if (voter_fingerprint) {
-            const existingVoteByFingerprint = await pool.query(
-                'SELECT id FROM votes WHERE submission_id = $1 AND voter_fingerprint = $2',
-                [submission_id, voter_fingerprint]
-            );
-
-            if (existingVoteByFingerprint.rows.length > 0) {
-                res.status(409).json({ error: 'Duplicate vote detected from this device' });
-                return;
-            }
+        if (existingVote.rows.length > 0) {
+            return res.status(409).json({ error: 'You have already voted for this submission' });
         }
 
         // Record the vote
-        const voteResult = await pool.query(
-            'INSERT INTO votes (submission_id, voter_id, voter_fingerprint, voter_ip) VALUES ($1, $2, $3, $4) RETURNING *',
+        await pool.query(
+            'INSERT INTO votes (submission_id, voter_id, voter_fingerprint, voter_ip) VALUES ($1, $2, $3, $4)',
             [submission_id, voter_id, voter_fingerprint, voter_ip]
         );
 
@@ -391,8 +360,7 @@ app.post('/api/submissions/:submission_id/vote', async (req, res) => {
 
         res.json({
             success: true,
-            votes: updatedVotes,
-            vote_id: voteResult.rows[0].id
+            votes: updatedVotes
         });
 
     } catch (error) {
@@ -401,5 +369,7 @@ app.post('/api/submissions/:submission_id/vote', async (req, res) => {
     }
 });
 
-// Export for Vercel
-module.exports = app; 
+// Vercel serverless function export
+module.exports = (req, res) => {
+    return app(req, res);
+}; 
