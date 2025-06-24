@@ -1,11 +1,12 @@
 {
   "version": 2,
   "name": "ai-prompt-master",
-  "functions": {
-    "server.js": {
-      "runtime": "@vercel/node"
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
