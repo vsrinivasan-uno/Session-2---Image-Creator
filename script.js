@@ -37,9 +37,16 @@ class LLMEducationPlatform {
             btn.addEventListener('click', (e) => this.showSection(e.currentTarget.dataset.section));
         });
 
-        // Technique tabs
+        // Technique tabs (including assignment tabs)
         document.querySelectorAll('.technique-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => this.switchTechnique(e.currentTarget.dataset.technique));
+            tab.addEventListener('click', (e) => {
+                const technique = e.currentTarget.dataset.technique;
+                if (technique.includes('-assignment')) {
+                    this.switchAssignmentTechnique(technique);
+                } else {
+                    this.switchTechnique(technique);
+                }
+            });
         });
 
         // Generate buttons for playground
@@ -867,6 +874,21 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         // Update builders
         document.querySelectorAll('.technique-builder').forEach(builder => builder.classList.remove('active'));
         document.getElementById(`${technique}-build`)?.classList.add('active');
+    }
+
+    switchAssignmentTechnique(technique) {
+        // Extract the base technique name (remove -assignment suffix)
+        const baseTechnique = technique.replace('-assignment', '');
+        this.assignmentTechnique = baseTechnique;
+
+        // Update assignment tabs only
+        const assignmentSection = document.getElementById('assignment-section');
+        if (assignmentSection) {
+            assignmentSection.querySelectorAll('.technique-tab').forEach(tab => tab.classList.remove('active'));
+            assignmentSection.querySelector(`[data-technique="${technique}"]`)?.classList.add('active');
+        }
+
+        console.log('Assignment technique changed to:', baseTechnique);
     }
 
     updateProgressTracker() {
