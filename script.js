@@ -1237,6 +1237,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const temp = parseFloat(document.getElementById('temperature')?.value || 0.7);
         const topP = parseFloat(document.getElementById('topP')?.value || 0.9);
         const topK = parseInt(document.getElementById('topK')?.value || 50);
+        const selectedModel = document.getElementById('aiModel')?.value || 'flux';
 
         // Show loading
         const loadingEl = document.getElementById('buildLoading');
@@ -1252,7 +1253,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             const seed = this.generateParameterSeed(temp, topP, topK);
 
             const encodedPrompt = encodeURIComponent(enhancedPrompt);
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&model=${selectedModel}&nologo=true`;
             
             // Create a promise to check when image loads
             const img = new Image();
@@ -1271,6 +1272,9 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 if (finalPromptEl) finalPromptEl.textContent = prompt;
                 if (parametersEl) parametersEl.innerHTML = `
                     <div class="param-display">
+                        <span class="param-label">AI Model:</span> <span class="param-value">${selectedModel}</span>
+                    </div>
+                    <div class="param-display">
                         <span class="param-label">Temperature:</span> <span class="param-value">${temp}</span>
                     </div>
                     <div class="param-display">
@@ -1287,7 +1291,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     originalPrompt: prompt,
                     enhancedPrompt,
                     imageUrl,
-                    parameters: { temp, topP, topK, seed },
+                    parameters: { temp, topP, topK, seed, model: selectedModel },
                     timestamp: Date.now(),
                     student: this.currentStudent
                 };
@@ -1733,7 +1737,13 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
 
             // Set parameters if available
             if (modelData.parameters) {
-                const { temp, topP, topK } = modelData.parameters;
+                const { temp, topP, topK, model } = modelData.parameters;
+                if (model !== undefined) {
+                    const modelSelector = document.getElementById('aiModel');
+                    if (modelSelector) {
+                        modelSelector.value = model;
+                    }
+                }
                 if (temp !== undefined) {
                     document.getElementById('temperature').value = temp;
                     document.getElementById('tempValue').textContent = temp;
@@ -1922,6 +1932,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
         const temp = parseFloat(document.getElementById('assignmentTemperature').value);
         const topP = parseFloat(document.getElementById('assignmentTopP').value);
         const topK = parseInt(document.getElementById('assignmentTopK').value);
+        const selectedModel = document.getElementById('assignmentAiModel')?.value || 'flux';
 
         // Show loading
         const results = document.getElementById('assignmentResults');
@@ -1932,7 +1943,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
         try {
             const enhancedPrompt = this.enhancePromptWithParameters(prompt, temp, topP, topK);
             const seed = this.generateParameterSeed(temp, topP, topK);
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=768&height=768&seed=${seed}&nologo=true`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=768&height=768&seed=${seed}&model=${selectedModel}&nologo=true`;
 
             img.src = imageUrl;
             img.style.display = 'block';
@@ -1943,7 +1954,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: this.assignmentTechnique,
                 prompt: prompt,
                 enhancedPrompt: enhancedPrompt,
-                parameters: { temp, topP, topK },
+                parameters: { temp, topP, topK, model: selectedModel },
                 imageUrl: imageUrl,
                 timestamp: Date.now(),
                 isAssignment: true,
@@ -2164,6 +2175,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                         <div class="parameters-section">
                             <h5>⚙️ Parameters Used</h5>
                             <div class="param-pills">
+                                <span class="param-pill">🤖 Model: ${submission.parameters.model || 'flux'}</span>
                                 <span class="param-pill">🌡️ Temp: ${submission.parameters.temp}</span>
                                 <span class="param-pill">🎯 Top-P: ${submission.parameters.topP}</span>
                                 <span class="param-pill">🔢 Top-K: ${submission.parameters.topK}</span>
@@ -2588,7 +2600,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: 'Structured',
                 prompt: 'SUBJECT: Majestic dragon with emerald scales STYLE: Fantasy digital art LIGHTING: Dramatic golden hour MOOD: Powerful and ancient',
                 imageUrl: 'https://image.pollinations.ai/prompt/majestic%20emerald%20dragon%20fantasy%20digital%20art%20golden%20hour%20lighting?width=512&height=512&seed=12345&nologo=true',
-                parameters: { temp: 0.7, topP: 0.9, topK: 50 },
+                parameters: { temp: 0.7, topP: 0.9, topK: 50, model: 'flux' },
                 analysis: 'Used structured prompting to create a detailed fantasy dragon with professional lighting.',
                 submittedAt: new Date().toISOString()
             },
@@ -2598,7 +2610,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: 'Few-Shot',
                 prompt: 'Following the pattern of mythical creatures: Ancient phoenix with crystalline feathers, surrounded by ethereal flames, mystical forest setting',
                 imageUrl: 'https://image.pollinations.ai/prompt/ancient%20phoenix%20crystalline%20feathers%20ethereal%20flames%20mystical%20forest?width=512&height=512&seed=67890&nologo=true',
-                parameters: { temp: 0.8, topP: 0.8, topK: 60 },
+                parameters: { temp: 0.8, topP: 0.8, topK: 60, model: 'flux-realism' },
                 analysis: 'Applied few-shot learning with consistent mythical creature examples.',
                 submittedAt: new Date().toISOString()
             },
@@ -2608,7 +2620,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: 'Role Playing',
                 prompt: 'As a master concept artist for fantasy films: Create a breathtaking unicorn in an enchanted grove with magical fireflies, cinematic composition, award-winning quality',
                 imageUrl: 'https://image.pollinations.ai/prompt/breathtaking%20unicorn%20enchanted%20grove%20magical%20fireflies%20cinematic%20composition?width=512&height=512&seed=13579&nologo=true',
-                parameters: { temp: 0.6, topP: 0.9, topK: 70 },
+                parameters: { temp: 0.6, topP: 0.9, topK: 70, model: 'flux-3d' },
                 analysis: 'Role-played as a professional concept artist to achieve cinematic quality.',
                 submittedAt: new Date().toISOString()
             },
@@ -2618,7 +2630,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: 'Chain-of-Thought',
                 prompt: 'Step 1: Choose a wise griffin. Step 2: Set in mountain peaks. Step 3: Add storm clouds. Step 4: Include dramatic lighting. Result: Wise griffin perched on mountain peak during epic thunderstorm',
                 imageUrl: 'https://image.pollinations.ai/prompt/wise%20griffin%20mountain%20peak%20epic%20thunderstorm%20dramatic%20lighting?width=512&height=512&seed=24680&nologo=true',
-                parameters: { temp: 0.5, topP: 0.7, topK: 40 },
+                parameters: { temp: 0.5, topP: 0.7, topK: 40, model: 'turbo' },
                 analysis: 'Used systematic chain-of-thought reasoning to build the scene step by step.',
                 submittedAt: new Date().toISOString()
             },
@@ -2628,7 +2640,7 @@ Final Synthesis: Create an ancient archmage in his transcendent mystical sanctum
                 technique: 'Zero-Shot',
                 prompt: 'Ethereal fairy queen with gossamer wings and flower crown, sitting in a moonlit garden with glowing mushrooms, hyperrealistic digital painting, magical atmosphere',
                 imageUrl: 'https://image.pollinations.ai/prompt/ethereal%20fairy%20queen%20gossamer%20wings%20flower%20crown%20moonlit%20garden%20glowing%20mushrooms?width=512&height=512&seed=97531&nologo=true',
-                parameters: { temp: 0.9, topP: 0.8, topK: 80 },
+                parameters: { temp: 0.9, topP: 0.8, topK: 80, model: 'flux-anime' },
                 analysis: 'Created detailed zero-shot prompt with rich descriptive language.',
                 submittedAt: new Date().toISOString()
             }

@@ -156,6 +156,14 @@
                                 <h5>⚙️ Generation Parameters</h5>
                                 <div class="parameter-grid">
                                     <div class="param-control">
+                                        <label>🤖 AI Model</label>
+                                        <select id="aiModel" class="model-selector">
+                                            <option value="flux">Flux (Default - Balanced)</option>
+                                            <option value="turbo">Turbo (Fast Generation)</option>
+                                        </select>
+                                        <p class="param-description">Choose the AI model for image generation. Flux provides balanced quality, Turbo prioritizes speed.</p>
+                                    </div>
+                                    <div class="param-control">
                                         <label>🌡️ Temperature: <span id="tempValue">0.7</span></label>
                                         <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
                                         <div class="param-scale">
@@ -743,6 +751,13 @@ TECHNICAL: 8K resolution, museum-quality detail</div>
                                 <div class="generation-controls">
                                     <h5>Your Parameter Settings</h5>
                                     <div class="assignment-parameter-grid">
+                                        <div class="param-control">
+                                            <label>🤖 AI Model</label>
+                                            <select id="assignmentAiModel" class="model-selector">
+                                                <option value="flux">Flux (Default - Balanced)</option>
+                                                <option value="turbo">Turbo (Fast Generation)</option>
+                                            </select>
+                                        </div>
                                         <div class="param-control">
                                             <label>Temperature: <span id="assignmentTempValue">0.7</span></label>
                                             <input type="range" id="assignmentTemperature" min="0" max="1" step="0.1" value="0.7">
