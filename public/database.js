@@ -1,13 +1,12 @@
 // Database API Helper Functions
 class DatabaseHelper {
     constructor() {
-        this.baseURL = window.location.origin;
+        this.baseURL = ''; // Use relative URLs for API calls
     }
 
     // Helper method for API calls
     async apiCall(endpoint, options = {}) {
-        const url = `${this.baseURL}/api${endpoint}`;
-        console.log(`🌐 API Call: ${options.method || 'GET'} ${url}`);
+        const url = `${this.baseURL}${endpoint}`;
         
         try {
             const response = await fetch(url, {
@@ -18,19 +17,15 @@ class DatabaseHelper {
                 ...options
             });
 
-            console.log(`📡 API Response: ${response.status} ${response.statusText}`);
-
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error(`❌ API Error Response:`, errorData);
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
             }
 
             const result = await response.json();
-            console.log(`✅ API Success Response:`, result);
             return result;
+
         } catch (error) {
-            console.error(`💥 API call failed:`, error);
             throw error;
         }
     }
@@ -41,70 +36,81 @@ class DatabaseHelper {
     }
 
     // Class management
-    async createClass(classData) {
-        return this.apiCall('/classes', {
+    async createClass(className, classCode, instructorName) {
+        return this.apiCall('/api/classes', {
             method: 'POST',
-            body: JSON.stringify(classData)
+            body: JSON.stringify({
+                class_name: className,
+                class_code: classCode,
+                instructor_name: instructorName
+            })
         });
     }
 
-    async getClassByCode(classCode) {
-        return this.apiCall(`/classes/${classCode}`);
+    async getClass(classCode) {
+        return this.apiCall(`/api/classes/${classCode}`);
     }
 
     // Assignment management
-    async createAssignment(assignmentData) {
-        return this.apiCall('/assignments', {
+    async createAssignment(classId, assignmentData) {
+        return this.apiCall('/api/assignments', {
             method: 'POST',
-            body: JSON.stringify(assignmentData)
+            body: JSON.stringify({
+                class_id: classId,
+                ...assignmentData
+            })
         });
     }
 
     async getAssignments(classId) {
-        return this.apiCall(`/classes/${classId}/assignments`);
+        return this.apiCall(`/api/classes/${classId}/assignments`);
     }
 
     // Submission management
     async submitAssignment(submissionData) {
-        return this.apiCall('/submissions', {
+        return this.apiCall('/api/submissions', {
             method: 'POST',
             body: JSON.stringify(submissionData)
         });
     }
 
     async getSubmissions(assignmentId) {
-        return this.apiCall(`/assignments/${assignmentId}/submissions`);
+        return this.apiCall(`/api/assignments/${assignmentId}/submissions`);
     }
 
     // Voting
     async voteForSubmission(submissionId, voterData) {
-        console.log(`🔗 DatabaseHelper: Voting for submission ${submissionId}`, voterData);
-        console.log(`🎯 API endpoint: ${this.baseURL}/api/submissions/${submissionId}/vote`);
-        
-        const result = await this.apiCall(`/submissions/${submissionId}/vote`, {
+        return this.apiCall(`/api/submissions/${submissionId}/vote`, {
             method: 'POST',
             body: JSON.stringify(voterData)
         });
-        
-        console.log(`🎉 DatabaseHelper: Vote result:`, result);
-        return result;
     }
 
-    async checkVotes(voterId, submissionIds) {
-        return this.apiCall('/votes/check', {
+    async checkVotingStatus(voterData) {
+        return this.apiCall('/api/votes/check', {
             method: 'POST',
-            body: JSON.stringify({ voter_id: voterId, submission_ids: submissionIds })
+            body: JSON.stringify(voterData)
         });
     }
 
     // Get first available assignment (for default submissions)
     async getDefaultAssignment() {
+        return this.apiCall('/api/assignments/default');
+    }
+
+    async getDefaultAssignmentWithFallback() {
         try {
-            const assignments = await this.apiCall('/assignments/default');
-            return assignments.length > 0 ? assignments[0] : null;
+            const assignment = await this.getDefaultAssignment();
+            return assignment;
         } catch (error) {
-            console.log('No default assignment found, using fallback');
-            return { id: 1 }; // Fallback to ID 1
+            // Return fallback assignment data
+            return {
+                id: 1,
+                title: "AI Artwork Creator",
+                description: "Create stunning AI-generated artwork using advanced prompting techniques.",
+                requirements: "Submit your best AI-generated image with detailed prompt analysis",
+                due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            };
         }
     }
 }

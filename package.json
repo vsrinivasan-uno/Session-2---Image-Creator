@@ -6,9 +6,7 @@
   "scripts": {
     "dev": "node server.js",
     "build": "echo 'Building for production'",
-    "start": "node server.js",
-    "init-db": "node init-db.js",
-    "reset-db": "node init-db.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "pg": "^8.11.3",

@@ -463,20 +463,22 @@ class LLMEducationPlatform {
 
     setupPromptGrading() {
         // Manual grading only - no automatic grading to avoid rate limits
-        console.log('Prompt grading setup - manual testing only');
+        // Prompt grading setup
     }
 
     async testPrompt(textareaId, technique) {
         const textarea = document.getElementById(textareaId);
-        const prompt = textarea.value.trim();
+        if (!textarea) return;
         
+        const prompt = textarea.value.trim();
         if (!prompt) {
-            this.showNotification('Please enter a prompt first!', 'warning');
+            this.showNotification('Please enter a prompt to test', 'warning');
             return;
         }
 
-        // Show loading state
-        const button = event.target;
+        const button = textarea.parentElement.querySelector('.test-btn');
+        if (!button) return;
+
         const originalText = button.innerHTML;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
         button.disabled = true;
@@ -486,7 +488,6 @@ class LLMEducationPlatform {
             this.displayGrade(grade, textareaId);
             this.showNotification(`Prompt tested! Score: ${grade.score}/10 - ${grade.quality}`, 'success');
         } catch (error) {
-            console.error('Testing failed:', error);
             this.showNotification('Testing failed - using local evaluation', 'warning');
             
             // Fallback to local grading
@@ -511,24 +512,19 @@ class LLMEducationPlatform {
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                console.log(`🔄 Attempt ${attempt}/${maxRetries} to grade prompt`);
-                
                 // Add delay between attempts to respect rate limits
                 if (attempt > 1) {
                     await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
                 }
                 
                 const result = await this.calculatePromptGradeAdvanced(prompt, technique);
-                console.log(`✅ Success on attempt ${attempt}`);
                 return result;
                 
             } catch (error) {
-                console.log(`❌ Attempt ${attempt} failed:`, error.message);
                 lastError = error;
                 
                 // If it's a rate limit error, wait longer
                 if (error.message.includes('429') || error.message.includes('rate limit')) {
-                    console.log('Rate limit detected, waiting longer...');
                     await new Promise(resolve => setTimeout(resolve, 5000 * attempt));
                 }
             }
@@ -567,7 +563,6 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             }
             
             const responseText = await response.text();
-            console.log('Raw LLM response:', responseText);
             
             // Check for error responses
             if (responseText.includes('"error"') && responseText.includes('429')) {
@@ -583,7 +578,6 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
                     throw new Error(gradeData.error);
                 }
             } catch (parseError) {
-                console.log('JSON parse failed, trying to extract from text:', parseError);
                 gradeData = this.extractGradeFromText(responseText, prompt);
             }
             
@@ -595,13 +589,11 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             if (!finalScore || finalScore < 1 || finalScore > 10) {
                 finalScore = this.getLocalScore(prompt);
                 isLocalFallback = true;
-                console.log('🔄 Switched to local scoring fallback');
             }
             
             if (!finalFeedback || finalFeedback.trim() === '') {
                 finalFeedback = this.getLocalFeedback(prompt, technique);
                 isLocalFallback = true;
-                console.log('🔄 Switched to local feedback fallback');
             }
             
             if (isLocalFallback) {
@@ -616,7 +608,6 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             };
             
         } catch (error) {
-            console.error('LLM grading failed:', error);
             throw error;
         }
     }
@@ -631,9 +622,6 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             const grade = await this.calculatePromptGrade(prompt, technique);
             this.displayGrade(grade, inputId);
         } catch (error) {
-            console.error('Grading error:', error);
-            console.log('🔄 Grading function failed - switching to full local mode');
-            
             // Use local fallback system instead of error message
             const fallbackScore = this.getLocalScore(prompt);
             const fallbackFeedback = this.getLocalFeedback(prompt, technique);
@@ -663,14 +651,11 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(gradingInstruction)}?model=openai&json=true&private=true`);
             const responseText = await response.text();
             
-            console.log('Raw LLM response:', responseText); // Debug logging
-            
             let gradeData;
             try {
                 // Try to parse as JSON first
                 gradeData = JSON.parse(responseText);
             } catch (parseError) {
-                console.log('JSON parse failed, trying to extract from text:', parseError);
                 // If JSON parsing fails, try to extract data from text response
                 gradeData = this.extractGradeFromText(responseText, prompt);
             }
@@ -684,16 +669,13 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
             if (!finalScore || finalScore < 1 || finalScore > 10) {
                 finalScore = this.getLocalScore(prompt);
                 isLocalFallback = true;
-                console.log('🔄 Switched to local scoring fallback');
             }
             
             if (!finalFeedback || finalFeedback.trim() === '') {
                 finalFeedback = this.getLocalFeedback(prompt, technique);
                 isLocalFallback = true;
-                console.log('🔄 Switched to local feedback fallback');
             }
             
-            // Add fallback indicator to feedback if local mode was used
             if (isLocalFallback) {
                 finalFeedback = `[Local Mode] ${finalFeedback}`;
             }
@@ -704,71 +686,37 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
                 color: this.getGradeColor(finalScore),
                 quality: this.getQualityText(finalScore)
             };
+            
         } catch (error) {
-            console.error('LLM grading failed:', error);
-            console.log('🔄 LLM completely failed - switching to full local mode');
-            
-            // Return local fallback instead of throwing error
-            const fallbackScore = this.getLocalScore(prompt);
-            const fallbackFeedback = this.getLocalFeedback(prompt, technique);
-            
-            return {
-                score: fallbackScore,
-                feedback: `[Local Mode - LLM Failed] ${fallbackFeedback}`,
-                color: this.getGradeColor(fallbackScore),
-                quality: this.getQualityText(fallbackScore)
-            };
+            throw error;
         }
     }
 
     extractGradeFromText(text, prompt) {
-        // Fallback method to extract grade info from non-JSON response
-        console.log('🔄 LLM returned non-JSON response, extracting manually:', text);
+        // Try to extract score and feedback from non-JSON responses
         
-        const scoreMatch = text.match(/score[":]\s*(\d+)/i);
-        const feedbackMatch = text.match(/feedback[":]\s*["']([^"']+)["']/i) || 
-                            text.match(/suggestion[":]\s*["']([^"']+)["']/i) ||
-                            text.match(/improve[":]\s*["']([^"']+)["']/i) ||
-                            text.match(/add[^.]*[.]/i);
+        const scoreMatch = text.match(/(?:"score":\s*(\d+))|(?:score[":]\s*(\d+))|(?:(\d+)\/10)|(?:rating[":]\s*(\d+))/i);
+        const score = scoreMatch ? parseInt(scoreMatch[1] || scoreMatch[2] || scoreMatch[3] || scoreMatch[4]) || 5 : 5;
         
-        // Create smart fallback scoring for basic prompts
-        let fallbackScore = 2;
-        let usedLocalScoring = false;
+        // Try to extract feedback
+        let feedback = '';
+        const feedbackMatch = text.match(/(?:"feedback":\s*"([^"]+)")|(?:feedback[":]\s*([^}\n]+))/i);
         
-        if (!scoreMatch) {
-            if (prompt.trim().split(' ').length <= 2) {
-                fallbackScore = prompt.toLowerCase() === 'dragon' ? 1 : 2;
-            } else if (prompt.trim().split(' ').length <= 5) {
-                fallbackScore = 3;
-            } else {
-                fallbackScore = 4;
-            }
-            usedLocalScoring = true;
-            console.log('🔄 No score found in LLM response, using local scoring');
+        if (feedbackMatch) {
+            feedback = (feedbackMatch[1] || feedbackMatch[2] || '').trim();
+        } else {
+            // Generate basic feedback if none found
+            feedback = this.generateBasicFeedback(text, prompt);
         }
         
-        let usedLocalFeedback = false;
-        let extractedFeedback = feedbackMatch ? feedbackMatch[1] : null;
-        
-        if (!extractedFeedback) {
-            extractedFeedback = this.generateBasicFeedback(text, prompt);
-            usedLocalFeedback = true;
-            console.log('🔄 No feedback found in LLM response, using local feedback');
-        }
-        
-        // Add indicators for what was locally generated
-        let feedbackPrefix = '';
-        if (usedLocalScoring && usedLocalFeedback) {
-            feedbackPrefix = '[Local Mode] ';
-        } else if (usedLocalScoring) {
-            feedbackPrefix = '[Local Scoring] ';
-        } else if (usedLocalFeedback) {
-            feedbackPrefix = '[Local Feedback] ';
+        // Ensure we have some feedback
+        if (!feedback) {
+            feedback = this.getLocalFeedback(prompt, 'general');
         }
         
         return {
-            score: scoreMatch ? parseInt(scoreMatch[1]) : fallbackScore,
-            feedback: feedbackPrefix + extractedFeedback
+            score: Math.min(10, Math.max(1, score)),
+            feedback: feedback
         };
     }
 
@@ -1091,7 +1039,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             assignmentSection.querySelector(`[data-technique="${technique}"]`)?.classList.add('active');
         }
 
-        console.log('Assignment technique changed to:', baseTechnique);
+        // Assignment technique changed
     }
 
     updateProgressTracker() {
@@ -2113,7 +2061,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.displayGrade(grade, 'assignmentPrompt');
             this.showNotification(`Assignment prompt tested! Score: ${grade.score}/10 - ${grade.quality}`, 'success');
         } catch (error) {
-            console.error('Testing failed:', error);
+            // Testing failed
             this.showNotification('Testing failed - using local evaluation', 'warning');
             
             const localScore = this.getLocalScore(prompt);
@@ -2175,7 +2123,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.updateProgressTracker();
 
         } catch (error) {
-            console.error('Generation failed:', error);
+            // Generation failed
             this.showNotification('Failed to generate assignment image', 'error');
         }
     }
@@ -2307,7 +2255,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.updateProgressTracker();
             
         } catch (error) {
-            console.error('Database submission failed:', error);
+            // Database submission failed, using local storage
             this.showNotification(`Database submission failed: ${error.message}. Falling back to local storage.`, 'warning');
             
             // Fallback to original method
@@ -2421,7 +2369,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.votingData = {};
             this.classSubmissions.forEach(submission => {
                 this.votingData[submission.student] = submission.votes;
-                console.log(`Loaded votes for ${submission.student}: ${submission.votes}`);
+                // Vote data loaded
             });
 
             // Check voting status for all submissions
@@ -2433,7 +2381,6 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.showNotification(`Loaded ${submissions.length} submissions from database`, 'success');
             
         } catch (error) {
-            console.error('Error loading database submissions:', error);
             this.showNotification('Could not load database submissions', 'warning');
             // Keep existing local submissions if any
         }
@@ -2517,38 +2464,26 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     }
 
     async voteForSubmission(studentName) {
-        console.log(`🗳️ Vote attempt for: ${studentName}`);
-        
         // Find the submission by student name
         const submission = this.classSubmissions.find(s => s.student === studentName);
         if (!submission) {
-            console.error('Submission not found for student:', studentName);
             this.showNotification('Submission not found!', 'error');
             return;
         }
 
-        console.log(`📋 Found submission:`, submission);
-
         // Check if already voted
         if (this.hasVoted(submission.id)) {
-            console.log(`⚠️ Already voted for submission ${submission.id}`);
             this.showNotification('You have already voted for this submission!', 'warning');
             return;
         }
 
-        console.log(`🆔 Voter ID: ${this.voterId}`);
-        console.log(`🔍 Voter Fingerprint: ${this.voterFingerprint}`);
-
         try {
-            console.log(`🌐 Attempting database vote for submission ${submission.id}...`);
             
             // Try database voting first
             const voteResult = await dbHelper.voteForSubmission(submission.id, {
                 voter_id: this.voterId,
                 voter_fingerprint: this.voterFingerprint
             });
-
-            console.log(`✅ Database vote successful:`, voteResult);
 
             // Update local state
             this.votedSubmissions.add(submission.id);
@@ -2558,7 +2493,6 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             const submissionIndex = this.classSubmissions.findIndex(s => s.id === submission.id);
             if (submissionIndex !== -1) {
                 this.classSubmissions[submissionIndex].votes = voteResult.votes;
-                console.log(`📊 Updated submission ${submission.id} vote count to ${voteResult.votes}`);
             }
 
             // Update local storage as backup
@@ -2573,18 +2507,14 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             
             // Also reload the submissions from database to ensure we have the latest vote counts
             setTimeout(() => {
-                console.log(`🔄 Reloading database submissions...`);
                 this.loadDatabaseSubmissions();
             }, 500);
 
         } catch (error) {
-            console.error(`❌ Database voting failed:`, error);
-            
             if (error.message.includes('already voted')) {
                 this.votedSubmissions.add(submission.id);
                 this.showNotification('You have already voted for this submission!', 'warning');
             } else {
-                console.log('🔄 Falling back to local voting');
                 // Fallback to local voting
                 this.voteForSubmissionLocal(studentName, submission.id);
             }
@@ -2825,7 +2755,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 button.style.background = '';
             }, 2000);
         }).catch(err => {
-            console.error('Failed to copy:', err);
+                            // Copy failed
             // Fallback for older browsers
             const textarea = document.createElement('textarea');
             textarea.value = code;
@@ -2925,8 +2855,6 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     // Winner Reveal System with Confetti
     async revealWinners() {
-        console.log('🏆 Revealing winners from database...');
-        
         if (this.classSubmissions.length < 3) {
             this.showNotification('Need at least 3 submissions to reveal winners!', 'warning');
             return;
@@ -2934,10 +2862,9 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
         // Refresh submissions from database to get latest vote counts
         try {
-            console.log('🔄 Refreshing submissions to get latest vote counts...');
             await this.loadDatabaseSubmissions();
         } catch (error) {
-            console.log('⚠️ Could not refresh from database, using current data');
+            // Could not refresh from database, using current data
         }
 
         // Check if we have any votes (either in database or local)
@@ -2948,8 +2875,6 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.showNotification('No votes cast yet! Cast some votes first.', 'warning');
             return;
         }
-
-        console.log(`📊 Database votes: ${totalDatabaseVotes}, Local votes: ${totalLocalVotes}`);
 
         // Calculate top 3 using DATABASE vote counts (primary) with local fallback
         const sortedResults = this.classSubmissions
@@ -2967,8 +2892,6 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             })
             .sort((a, b) => b.votes - a.votes)
             .slice(0, 3);
-
-        console.log('🥇 Top 3 Winners:', sortedResults.map(r => `${r.student}: ${r.votes} votes (${r.source})`));
 
         // Start confetti
         this.startConfetti();
@@ -3123,7 +3046,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const totalLocalVotes = Object.values(this.votingData).reduce((sum, votes) => sum + votes, 0);
         const hasVotes = totalDatabaseVotes > 0 || totalLocalVotes > 0;
         
-        console.log(`🎯 Winner check: ${hasEnoughSubmissions ? '✅' : '❌'} submissions (${this.classSubmissions.length}/3), ${hasVotes ? '✅' : '❌'} votes (DB: ${totalDatabaseVotes}, Local: ${totalLocalVotes})`);
+        // Check winner reveal criteria
         
         if (winnerSection && hasEnoughSubmissions && hasVotes) {
             winnerSection.style.display = 'block';
@@ -3144,7 +3067,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         // Generate browser fingerprint for additional protection
         this.voterFingerprint = this.generateFingerprint();
         
-        console.log('Voter initialized:', this.voterId.substring(0, 8) + '...');
+        // Voter initialized
     }
 
     generateVoterId() {
@@ -3184,7 +3107,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.votedSubmissions = new Set(result.voted_submissions);
             return result.voted_submissions;
         } catch (error) {
-            console.log('Could not check voting status from database, using local storage');
+            // Could not check voting status from database, using local storage
             // Fallback to local storage
             const localVotes = JSON.parse(localStorage.getItem('voted-submissions') || '[]');
             this.votedSubmissions = new Set(localVotes);
