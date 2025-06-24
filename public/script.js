@@ -2091,10 +2091,13 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const topK = parseInt(document.getElementById('assignmentTopK').value);
         const selectedModel = document.getElementById('assignmentAiModel')?.value || 'flux';
 
-        // Show loading
-        const results = document.getElementById('assignmentResults');
-        results.style.display = 'block';
+        // Show loading state
+        const loadingEl = document.getElementById('buildLoading');
+        const resultsEl = document.getElementById('assignmentResults');
         const img = document.getElementById('assignmentImage');
+        
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (resultsEl) resultsEl.style.display = 'none';
         img.style.display = 'none';
 
         try {
@@ -2102,8 +2105,19 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             const seed = this.generateParameterSeed(temp, topP, topK);
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=768&height=768&seed=${seed}&model=${selectedModel}&nologo=true`;
 
+            // Wait for image to load before showing results
+            img.onload = () => {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (resultsEl) resultsEl.style.display = 'block';
+                img.style.display = 'block';
+            };
+            
+            img.onerror = () => {
+                if (loadingEl) loadingEl.style.display = 'none';
+                this.showNotification('Failed to load generated image', 'error');
+            };
+            
             img.src = imageUrl;
-            img.style.display = 'block';
 
             // Store assignment model (student name will be added at submission)
             this.currentModel = {
@@ -2124,6 +2138,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
         } catch (error) {
             // Generation failed
+            if (loadingEl) loadingEl.style.display = 'none';
             this.showNotification('Failed to generate assignment image', 'error');
         }
     }
@@ -2184,7 +2199,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     <button class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">
                         Cancel
                     </button>
-                    <button class="btn btn-primary" onclick="modelBuilder.processSubmission('${analysis}')">
+                    <button class="btn btn-primary" onclick="platform.processSubmission('${analysis}')">
                         <i class="fas fa-paper-plane"></i> Submit Assignment
                     </button>
                 </div>
