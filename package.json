@@ -27,7 +27,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/ai-prompt-master.git"
+    "url": "https://github.com/vsrinivasan-uno/Session-2---Image-Creator.git"
   },
   "engines": {
     "node": ">=18.0.0"
