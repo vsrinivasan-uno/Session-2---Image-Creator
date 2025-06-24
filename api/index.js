@@ -6,7 +6,6 @@ const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Trust proxy for IP detection in production
 app.set('trust proxy', true);
@@ -32,7 +31,6 @@ try {
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public'));
 
 // Initialize database tables
 async function initializeDatabase() {
@@ -139,6 +137,15 @@ function getRealIP(req) {
     return detectedIP;
 }
 
+// Initialize database on first request
+let dbInitialized = false;
+async function ensureDatabase() {
+    if (!dbInitialized) {
+        dbInitialized = await initializeDatabase();
+    }
+    return dbInitialized;
+}
+
 // API Routes
 
 // Health check
@@ -193,6 +200,7 @@ app.get('/api/debug/simulate-real-ip', (req, res) => {
 // Create a new class
 app.post('/api/classes', async (req, res) => {
     try {
+        await ensureDatabase();
         const { name, description, instructor_name } = req.body;
         const class_code = uuidv4().substring(0, 8).toUpperCase();
         
@@ -208,26 +216,22 @@ app.post('/api/classes', async (req, res) => {
     }
 });
 
-// Get class by code
-app.get('/api/classes/:code', async (req, res) => {
+// Get all classes
+app.get('/api/classes', async (req, res) => {
     try {
-        const { code } = req.params;
-        const result = await pool.query('SELECT * FROM classes WHERE class_code = $1', [code]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Class not found' });
-        }
-        
-        res.json(result.rows[0]);
+        await ensureDatabase();
+        const result = await pool.query('SELECT * FROM classes ORDER BY created_at DESC');
+        res.json(result.rows);
     } catch (error) {
-        console.error('Error fetching class:', error);
-        res.status(500).json({ error: 'Failed to fetch class' });
+        console.error('Error fetching classes:', error);
+        res.status(500).json({ error: 'Failed to fetch classes' });
     }
 });
 
 // Create assignment
 app.post('/api/assignments', async (req, res) => {
     try {
+        await ensureDatabase();
         const { class_id, title, description, requirements, technique, due_date } = req.body;
         
         const result = await pool.query(
@@ -245,6 +249,7 @@ app.post('/api/assignments', async (req, res) => {
 // Get assignments for a class
 app.get('/api/classes/:class_id/assignments', async (req, res) => {
     try {
+        await ensureDatabase();
         const { class_id } = req.params;
         const result = await pool.query(
             'SELECT * FROM assignments WHERE class_id = $1 AND is_active = true ORDER BY created_at DESC',
@@ -261,6 +266,7 @@ app.get('/api/classes/:class_id/assignments', async (req, res) => {
 // Get default assignment (first available assignment)
 app.get('/api/assignments/default', async (req, res) => {
     try {
+        await ensureDatabase();
         const result = await pool.query(
             'SELECT * FROM assignments WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
         );
@@ -275,6 +281,7 @@ app.get('/api/assignments/default', async (req, res) => {
 // Submit assignment
 app.post('/api/submissions', async (req, res) => {
     try {
+        await ensureDatabase();
         const { assignment_id, student_name, student_email, prompt_data, image_url } = req.body;
         const submission_code = uuidv4().substring(0, 12).toUpperCase();
         
@@ -293,6 +300,7 @@ app.post('/api/submissions', async (req, res) => {
 // Get submissions for an assignment
 app.get('/api/assignments/:assignment_id/submissions', async (req, res) => {
     try {
+        await ensureDatabase();
         const { assignment_id } = req.params;
         const result = await pool.query(
             'SELECT * FROM submissions WHERE assignment_id = $1 ORDER BY submitted_at DESC',
@@ -309,6 +317,7 @@ app.get('/api/assignments/:assignment_id/submissions', async (req, res) => {
 // Check if voter has already voted for submissions
 app.post('/api/votes/check', async (req, res) => {
     try {
+        await ensureDatabase();
         const { voter_id, submission_ids } = req.body;
         
         if (!voter_id || !submission_ids || !Array.isArray(submission_ids)) {
@@ -333,19 +342,10 @@ app.post('/api/submissions/:submission_id/vote', async (req, res) => {
     const submission_id = req.params.submission_id;
     const { voter_id, voter_fingerprint } = req.body;
     const voter_ip = getRealIP(req);
-    const timestamp = new Date().toISOString();
-
-    // Enhanced logging for production monitoring
-    const ipInfo = {
-        detected: voter_ip,
-        forwarded: req.headers['x-forwarded-for'],
-        real: req.headers['x-real-ip'],
-        cf: req.headers['cf-connecting-ip'],
-        connection: req.connection?.remoteAddress,
-        socket: req.socket?.remoteAddress
-    };
 
     try {
+        await ensureDatabase();
+        
         if (!voter_id) {
             res.status(400).json({ error: 'Voter ID is required' });
             return;
@@ -401,24 +401,5 @@ app.post('/api/submissions/:submission_id/vote', async (req, res) => {
     }
 });
 
-// Serve frontend files
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Initialize database and start server
-async function startServer() {
-        const dbInitialized = await initializeDatabase();
-    
-    if (dbInitialized) {
-        // Database ready
-    } else {
-        // Offline mode - frontend will handle gracefully
-    }
-
-    app.listen(PORT, () => {
-        // Server started
-    });
-}
-
-startServer().catch(console.error); 
+// Export for Vercel
+module.exports = app; 
