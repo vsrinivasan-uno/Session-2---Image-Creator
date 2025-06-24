@@ -705,7 +705,7 @@ Respond JSON only: {"score": 5, "feedback": "Add more details about X"}`;
         
         if (feedbackMatch) {
             feedback = (feedbackMatch[1] || feedbackMatch[2] || '').trim();
-        } else {
+            } else {
             // Generate basic feedback if none found
             feedback = this.generateBasicFeedback(text, prompt);
         }
@@ -2118,7 +2118,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     // Scroll to results section smoothly
                     resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-                img.style.display = 'block';
+            img.style.display = 'block';
             };
             
             img.onerror = () => {
@@ -2231,7 +2231,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             this.showNotification('Please enter your full name!', 'warning');
             return;
         }
-        
+
         if (!studentEmail || !studentEmail.includes('@')) {
             this.showNotification('Please enter a valid email address!', 'warning');
             return;
@@ -2373,7 +2373,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 // Ensure votes is a number, defaulting to 0
                 const voteCount = parseInt(sub.votes) || 0;
                 
-                return {
+                const submission = {
                     id: sub.id,
                     student: sub.student_name,
                     email: sub.student_email, // Store but don't display
@@ -2389,6 +2389,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     submissionCode: sub.submission_code,
                     isAnonymous: true // Flag for anonymous display
                 };
+                
+                return submission;
             });
 
             // Initialize voting data from database
@@ -2402,11 +2404,11 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             const submissionIds = this.classSubmissions.map(sub => sub.id);
             await this.checkVotingStatus(submissionIds);
 
-            this.updateSubmissionGallery();
+                this.updateSubmissionGallery();
             this.checkForWinnerReveal(); // Check if winner reveal button should be shown
             // Notification disabled for better UX
             // this.showNotification(`Loaded ${submissions.length} submissions from database`, 'success');
-            
+
         } catch (error) {
             this.showNotification('Could not load database submissions', 'warning');
             // Keep existing local submissions if any
@@ -2439,9 +2441,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             return `
                 <div class="submission-card ${submission.isRevealed ? 'revealed' : 'anonymous'}" 
                      data-index="${index}" 
-                     data-student="${submission.student}" 
-                     onclick="modelBuilder.viewSubmission(${index})">
-                    <div class="submission-image">
+                     data-student="${submission.student}">
+                    <div class="submission-image" onclick="modelBuilder.showInstagramModal(${index})" style="cursor: pointer;">
                         <img src="${submission.imageUrl}" alt="${displayImageAlt}" loading="lazy">
                     </div>
                     <div class="submission-overlay">
@@ -2450,45 +2451,178 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                             ${submission.submittedAt ? `<span class="submission-date">${new Date(submission.submittedAt).toLocaleDateString()}</span>` : ''}
                         </div>
                         <div class="submission-actions">
-                            <div class="submission-info">
-                                <span class="technique-badge">${submission.technique}</span>
+                        <div class="submission-info">
+                            <span class="technique-badge">${submission.technique}</span>
                                 <div class="vote-counter">❤️ ${submission.votes || this.votingData[submission.student] || 0}</div>
                                 ${!submission.isRevealed ? '<div class="anonymous-badge">🎭 Anonymous</div>' : ''}
-                            </div>
+                        </div>
                             <div class="action-buttons">
                                 ${this.hasVoted(submission.id) ? 
-                                    `<button class="btn btn-sm btn-voted" disabled>
-                                        <i class="fas fa-heart"></i> Voted
+                                    `<button class="btn btn-sm btn-voted" onclick="event.stopPropagation(); modelBuilder.toggleVoteForSubmission('${submission.student}')">
+                                        <i class="fas fa-heart"></i> Liked
                                     </button>` :
-                                    `<button class="btn btn-sm btn-vote" onclick="event.stopPropagation(); modelBuilder.voteForSubmission('${submission.student}')">
-                                        <i class="fas fa-heart"></i> Vote
+                                    `<button class="btn btn-sm btn-vote" onclick="event.stopPropagation(); modelBuilder.toggleVoteForSubmission('${submission.student}')">
+                                        <i class="far fa-heart"></i> Like
                                     </button>`
                                 }
-                                ${!submission.isRevealed ? 
-                                    `<button class="btn btn-sm btn-reveal" onclick="event.stopPropagation(); modelBuilder.revealArtist(${index})">
-                                        <i class="fas fa-eye"></i> Reveal
-                                    </button>` :
-                                    `<button class="btn btn-sm btn-details" onclick="event.stopPropagation(); modelBuilder.viewDetails(${index})">
-                                        <i class="fas fa-info-circle"></i> Details
-                                    </button>`
-                                }
-                            </div>
-                        </div>
                     </div>
                 </div>
+                </div>
+            </div>
             `;
         }).join('');
 
         gallery.innerHTML = galleryHTML;
     }
 
-    viewSubmission(index) {
+    // Instagram/TikTok Style Modal
+    showInstagramModal(index) {
         const submission = this.classSubmissions[index];
         if (!submission) return;
 
-        // Show detailed view
-        // Notification disabled for better UX
-        // this.showNotification(`Viewing ${submission.technique} submission with ${submission.votes || this.votingData[submission.student] || 0} votes`, 'info');
+        // Create Instagram/TikTok style modal
+        const modal = document.createElement('div');
+        modal.className = 'instagram-modal active';
+        
+        const displayName = submission.isRevealed ? submission.student : `Student ${index + 1}`;
+        const votes = submission.votes || this.votingData[submission.student] || 0;
+        
+        modal.innerHTML = `
+            <div class="instagram-modal-content">
+                <button class="instagram-close" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                
+                <div class="instagram-container">
+                    <!-- Left side - Image -->
+                    <div class="instagram-image-section" id="instagram-image-${index}">
+                        <img src="${submission.imageUrl}" alt="Artwork" class="instagram-image">
+                        <div class="instagram-overlay-info">
+                            <div class="instagram-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-heart"></i>
+                                    <span>${votes}</span>
+                </div>
+                                ${submission.isRevealed ? '' : '<div class="anonymous-indicator">🎭 Anonymous</div>'}
+                    </div>
+                        </div>
+                        </div>
+                        
+                    <!-- Right side - Details -->
+                    <div class="instagram-details-section">
+                        <div class="instagram-header">
+                            <div class="profile-section">
+                                <div class="profile-avatar">
+                                    ${submission.isRevealed ? '👨‍🎨' : '🎭'}
+                                </div>
+                                <div class="profile-info">
+                                    <h3>${displayName}</h3>
+                                    <span class="technique-tag">${submission.technique}</span>
+                                </div>
+                            </div>
+                            ${!submission.isRevealed ? 
+                                `<button class="reveal-btn" onclick="modelBuilder.revealInModal(${index}, this)">
+                                    <i class="fas fa-eye"></i> Reveal Artist
+                                </button>` : ''
+                            }
+                        </div>
+                        
+                        <div class="instagram-content">
+                            <div class="content-section">
+                                <h4>💭 Prompt</h4>
+                                <p class="prompt-content">${submission.prompt}</p>
+                            </div>
+                            
+                            <div class="content-section">
+                                <h4>⚙️ Settings</h4>
+                                <div class="settings-grid">
+                                    <div class="setting-item">
+                                        <span class="setting-label">Model</span>
+                                        <span class="setting-value">${submission.parameters?.model || 'flux'}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Temperature</span>
+                                        <span class="setting-value">${submission.parameters?.temp || 'N/A'}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Top-P</span>
+                                        <span class="setting-value">${submission.parameters?.topP || 'N/A'}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Top-K</span>
+                                        <span class="setting-value">${submission.parameters?.topK || 'N/A'}</span>
+                                    </div>
+                            </div>
+                        </div>
+                        
+                            ${submission.analysis ? `
+                                <div class="content-section">
+                                    <h4>✨ Reflection</h4>
+                                    <p class="reflection-content">${submission.analysis}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="instagram-actions">
+                            ${this.hasVoted(submission.id) ? 
+                                `<button class="action-btn voted" onclick="modelBuilder.toggleVoteFromModal('${submission.student}', this)">
+                                    <i class="fas fa-heart"></i> Liked
+                                </button>` :
+                                `<button class="action-btn like-btn" onclick="modelBuilder.toggleVoteFromModal('${submission.student}', this)">
+                                    <i class="far fa-heart"></i> Like
+                                </button>`
+                            }
+                            
+                            <div class="meta-info">
+                                ${submission.submittedAt ? 
+                                    `<span class="submit-time">${new Date(submission.submittedAt).toLocaleDateString()}</span>` : ''
+                                }
+                                ${submission.submissionCode ? 
+                                    `<span class="submission-code">#${submission.submissionCode}</span>` : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Add double-tap to vote functionality (Instagram style)
+        this.setupDoubleTapVote(index, submission);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Add keyboard support
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleKeyPress);
+            }
+        };
+        document.addEventListener('keydown', handleKeyPress);
+    }
+
+    async toggleVoteForSubmission(studentName) {
+        // Find the submission by student name
+        const submission = this.classSubmissions.find(s => s.student === studentName);
+        if (!submission) {
+            this.showNotification('Submission not found!', 'error');
+            return;
+        }
+
+        // Check if already voted to determine action
+        if (this.hasVoted(submission.id)) {
+            await this.removeVoteForSubmission(studentName);
+        } else {
+            await this.voteForSubmission(studentName);
+        }
     }
 
     async voteForSubmission(studentName) {
@@ -2506,8 +2640,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             return;
         }
 
-        try {
-            
+        try {            
             // Try database voting first
             const voteResult = await dbHelper.voteForSubmission(submission.id, {
                 voter_id: this.voterId,
@@ -2577,7 +2710,78 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         this.checkForWinnerReveal();
     }
 
-    revealArtist(index) {
+    async removeVoteForSubmission(studentName) {
+        // Find the submission by student name
+        const submission = this.classSubmissions.find(s => s.student === studentName);
+        if (!submission) {
+            this.showNotification('Submission not found!', 'error');
+            return;
+        }
+
+        // Check if not voted
+        if (!this.hasVoted(submission.id)) {
+            return;
+        }
+
+        try {
+            // Try database unlike first
+            const unlikeResult = await dbHelper.removeVoteForSubmission(submission.id, {
+                voter_id: this.voterId,
+                voter_fingerprint: this.voterFingerprint
+            });
+
+            // Update local state
+            this.votedSubmissions.delete(submission.id);
+            this.votingData[studentName] = unlikeResult.votes;
+            
+            // Also update the submission object directly
+            const submissionIndex = this.classSubmissions.findIndex(s => s.id === submission.id);
+            if (submissionIndex !== -1) {
+                this.classSubmissions[submissionIndex].votes = unlikeResult.votes;
+            }
+
+            // Update local storage as backup
+            const localVotes = Array.from(this.votedSubmissions);
+            localStorage.setItem('voted-submissions', JSON.stringify(localVotes));
+            
+            // Force refresh the gallery to show updated vote count
+            this.updateSubmissionGallery();
+            this.checkForWinnerReveal();
+            
+            // Also reload the submissions from database to ensure we have the latest vote counts
+            setTimeout(() => {
+                this.loadDatabaseSubmissions();
+            }, 500);
+
+        } catch (error) {
+            console.error('Database unlike failed:', error);
+            // Fallback to local unlike
+            this.removeVoteLocalOnly(studentName, submission.id);
+        }
+    }
+
+    removeVoteLocalOnly(studentName, submissionId) {
+        // Check local voting record
+        if (!this.hasVoted(submissionId)) {
+            return;
+        }
+
+        // Update local state
+        if (this.votingData[studentName] > 0) {
+            this.votingData[studentName]--;
+        }
+        this.votedSubmissions.delete(submissionId);
+
+        // Update local storage
+        const localVotes = Array.from(this.votedSubmissions);
+        localStorage.setItem('voted-submissions', JSON.stringify(localVotes));
+        
+        this.updateSubmissionGallery();
+        this.checkForWinnerReveal();
+    }
+
+    // Support functions for Instagram modal
+    revealInModal(index, button) {
         const submission = this.classSubmissions[index];
         if (!submission) return;
 
@@ -2587,102 +2791,170 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         // Update gallery display
         this.updateSubmissionGallery();
 
-        // Create reveal modal with PII
-        this.showRevealModal(submission);
-        // Notification disabled for better UX - reveal is shown visually in modal
-        // this.showNotification(`Revealed: This artwork was created by ${submission.student}!`, 'info');
+        // Update the modal in real-time
+        const modal = button.closest('.instagram-modal');
+        if (modal) {
+            // Update profile section
+            const profileAvatar = modal.querySelector('.profile-avatar');
+            const profileName = modal.querySelector('.profile-info h3');
+            const anonymousIndicator = modal.querySelector('.anonymous-indicator');
+            
+            if (profileAvatar) profileAvatar.textContent = '👨‍🎨';
+            if (profileName) profileName.textContent = submission.student;
+            if (anonymousIndicator) anonymousIndicator.remove();
+            
+            // Remove reveal button
+            button.remove();
+        }
     }
 
-    viewDetails(index) {
-        const submission = this.classSubmissions[index];
+    async toggleVoteFromModal(studentName, button) {
+        const submission = this.classSubmissions.find(s => s.student === studentName);
         if (!submission) return;
 
-        // Show detailed view without revealing PII if not already revealed
-        this.showRevealModal(submission);
+        const wasVoted = this.hasVoted(submission.id);
+        
+        // Use existing toggle function
+        await this.toggleVoteForSubmission(studentName);
+        
+        // Get the updated submission object after the vote/unlike operation
+        const updatedSubmission = this.classSubmissions.find(s => s.student === studentName);
+        
+        // Update button state based on new vote status
+        const isNowVoted = this.hasVoted(submission.id);
+        
+        if (isNowVoted) {
+            button.innerHTML = '<i class="fas fa-heart"></i> Liked';
+            button.className = 'action-btn voted';
+        } else {
+            button.innerHTML = '<i class="far fa-heart"></i> Like';
+            button.className = 'action-btn like-btn';
+        }
+        
+        // Update vote count in modal using the updated submission data
+        const modal = button.closest('.instagram-modal');
+        const voteCount = modal.querySelector('.stat-item span');
+        if (voteCount && updatedSubmission) {
+            // Use the most recent vote count from the updated submission object or voting data
+            const votes = updatedSubmission.votes ?? this.votingData[studentName] ?? 0;
+            voteCount.textContent = votes;
+        }
     }
 
-    showRevealModal(submission) {
-        // Determine what information to show based on reveal status
-        const isRevealed = submission.isRevealed;
-        const displayName = isRevealed ? submission.student : 'Anonymous Student';
-        const modalTitle = isRevealed ? '🎭 Artist Revealed!' : '🖼️ Submission Details';
-        
-        // Create modal
-        const modal = document.createElement('div');
-        modal.className = 'modal active reveal-modal';
-        modal.innerHTML = `
-            <div class="modal-content reveal-modal-content">
-                <div class="modal-header">
-                    <h3>${modalTitle}</h3>
-                    <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body reveal-modal-body">
-                    <div class="reveal-artwork-display">
-                        <img src="${submission.imageUrl}" alt="Artwork" class="reveal-modal-image">
-                    </div>
-                    <div class="reveal-details-panel">
-                        <div class="artist-info">
-                            <h4>${isRevealed ? '👨‍🎨' : '🎭'} ${displayName}</h4>
-                            <span class="technique-badge-large">${submission.technique}</span>
-                            ${!isRevealed ? '<div class="privacy-note">🔒 Artist identity protected</div>' : ''}
-                        </div>
-                        
-                        <div class="prompt-section">
-                            <h5>📝 Original Prompt</h5>
-                            <div class="prompt-text">${submission.prompt}</div>
-                        </div>
-                        
-                        <div class="parameters-section">
-                            <h5>⚙️ Parameters Used</h5>
-                            <div class="param-pills">
-                                <span class="param-pill">🤖 Model: ${submission.parameters?.model || 'flux'}</span>
-                                <span class="param-pill">🌡️ Temp: ${submission.parameters?.temp || 'N/A'}</span>
-                                <span class="param-pill">🎯 Top-P: ${submission.parameters?.topP || 'N/A'}</span>
-                                <span class="param-pill">🔢 Top-K: ${submission.parameters?.topK || 'N/A'}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="analysis-section">
-                            <h5>💭 Student's Reflection</h5>
-                            <div class="analysis-text">${submission.analysis || 'No reflection provided'}</div>
-                        </div>
-                        
-                        <div class="submission-meta">
-                            ${submission.submittedAt ? `<p><i class="fas fa-clock"></i> Submitted: ${new Date(submission.submittedAt).toLocaleString()}</p>` : ''}
-                            <p><i class="fas fa-thumbs-up"></i> Votes: ${submission.votes || this.votingData[submission.student] || 0}</p>
-                            ${isRevealed && submission.submissionCode ? `<p><i class="fas fa-code"></i> Code: ${submission.submissionCode}</p>` : ''}
-                        </div>
-                        
-                        ${!isRevealed ? `
-                            <div class="privacy-section">
-                                <div class="privacy-explanation">
-                                    <h6>🔐 Privacy Protection</h6>
-                                    <p>This submission is displayed anonymously to protect student privacy. Email addresses and personal information are hidden.</p>
-                                </div>
-                            </div>
-                        ` : `
-                            <div class="revealed-section">
-                                <div class="contact-info">
-                                    <h6>📧 Contact Information</h6>
-                                    <p><strong>Email:</strong> ${submission.email || 'Not provided'}</p>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
+    // Legacy function for backward compatibility
+    async voteFromModal(studentName, button) {
+        return this.toggleVoteFromModal(studentName, button);
+    }
+
+    setupDoubleTapVote(index, submission) {
+        const imageSection = document.getElementById(`instagram-image-${index}`);
+        if (!imageSection) return;
+
+        let lastTap = 0;
+        let tapTimeout;
+
+        imageSection.addEventListener('click', async (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            clearTimeout(tapTimeout);
+            
+            if (tapLength < 500 && tapLength > 0) {
+                // Double tap detected!
+                e.preventDefault();
+                
+                const wasVoted = this.hasVoted(submission.id);
+                
+                // Show appropriate animation
+                this.showHeartAnimation(e.pageX, e.pageY, !wasVoted);
+                
+                // Toggle vote for the submission
+                await this.toggleVoteForSubmission(submission.student);
+                
+                // Update the modal UI
+                this.updateModalAfterToggle(submission);
+                
+            } else {
+                // Single tap - do nothing (just show image)
+                tapTimeout = setTimeout(() => {
+                    // Single tap action could go here if needed
+                }, 500);
             }
+            
+            lastTap = currentTime;
         });
+    }
+
+    showHeartAnimation(x, y, isLiking) {
+        const heart = document.createElement('div');
+        heart.className = 'floating-heart';
+        
+        if (isLiking) {
+            // Liking animation - red heart
+            heart.innerHTML = '❤️';
+            heart.style.animation = 'heartFloat 1.5s ease-out forwards';
+        } else {
+            // Unliking animation - broken heart
+            heart.innerHTML = '💔';
+            heart.style.animation = 'heartBreak 1.5s ease-out forwards';
+        }
+        
+        heart.style.left = (x - 25) + 'px';
+        heart.style.top = (y - 25) + 'px';
+        heart.style.position = 'fixed';
+        heart.style.fontSize = '50px';
+        heart.style.pointerEvents = 'none';
+        heart.style.zIndex = '10002';
+        
+        document.body.appendChild(heart);
+        
+        // Remove heart after animation
+        setTimeout(() => {
+            if (heart.parentNode) {
+                heart.parentNode.removeChild(heart);
+            }
+        }, 1500);
+    }
+
+    updateModalAfterToggle(submission) {
+        const modal = document.querySelector('.instagram-modal');
+        if (!modal) return;
+        
+        // Get the most current submission data
+        const currentSubmission = this.classSubmissions.find(s => s.id === submission.id || s.student === submission.student);
+        
+        // Update vote count
+        const voteCount = modal.querySelector('.stat-item span');
+        if (voteCount && currentSubmission) {
+            const votes = currentSubmission.votes ?? this.votingData[currentSubmission.student] ?? 0;
+            voteCount.textContent = votes;
+        }
+        
+        // Update like button based on current vote status
+        const actionBtn = modal.querySelector('.action-btn');
+        if (actionBtn && currentSubmission) {
+            const isVoted = this.hasVoted(currentSubmission.id);
+            if (isVoted) {
+                actionBtn.innerHTML = '<i class="fas fa-heart"></i> Liked';
+                actionBtn.className = 'action-btn voted';
+            } else {
+                actionBtn.innerHTML = '<i class="far fa-heart"></i> Like';
+                actionBtn.className = 'action-btn like-btn';
+            }
+        }
+    }
+
+    // Legacy function for backward compatibility
+    updateModalAfterVote(submission) {
+        return this.updateModalAfterToggle(submission);
+    }
+
+    // Legacy function - now redirects to Instagram modal
+    showRevealModal(submission) {
+        const index = this.classSubmissions.findIndex(s => s.id === submission.id || s.student === submission.student);
+        if (index >= 0) {
+            this.showInstagramModal(index);
+        }
     }
 
     // Results & Competition Functions

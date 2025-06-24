@@ -272,6 +272,26 @@ app.get('/api/assignments/default', async (req, res) => {
     }
 });
 
+// Get all submissions
+app.get('/api/submissions', async (req, res) => {
+    try {
+        await initializeDatabase();
+        
+        const result = await pool.query(`
+            SELECT s.*, a.title as assignment_title, c.name as class_name 
+            FROM submissions s 
+            LEFT JOIN assignments a ON s.assignment_id = a.id 
+            LEFT JOIN classes c ON a.class_id = c.id 
+            ORDER BY s.submitted_at DESC
+        `);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching submissions:', error);
+        res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
+});
+
 // Submit assignment
 app.post('/api/submissions', async (req, res) => {
     try {
@@ -398,6 +418,54 @@ app.post('/api/submissions/:submission_id/vote', async (req, res) => {
     } catch (error) {
         console.error('Error voting:', error);
         res.status(500).json({ error: 'Failed to record vote' });
+    }
+});
+
+// Remove vote (unlike) from submission
+app.delete('/api/submissions/:submission_id/unlike', async (req, res) => {
+    const submission_id = req.params.submission_id;
+    const { voter_id, voter_fingerprint } = req.body;
+    const voter_ip = getRealIP(req);
+
+    try {
+        if (!voter_id) {
+            res.status(400).json({ error: 'Voter ID is required' });
+            return;
+        }
+
+        // Check if vote exists
+        const existingVote = await pool.query(
+            'SELECT id FROM votes WHERE submission_id = $1 AND voter_id = $2',
+            [submission_id, voter_id]
+        );
+
+        if (existingVote.rows.length === 0) {
+            res.status(404).json({ error: 'No vote found to remove' });
+            return;
+        }
+
+        // Remove the vote
+        await pool.query(
+            'DELETE FROM votes WHERE submission_id = $1 AND voter_id = $2',
+            [submission_id, voter_id]
+        );
+
+        // Update submission vote count
+        const updateResult = await pool.query(
+            'UPDATE submissions SET votes = GREATEST(COALESCE(votes, 0) - 1, 0) WHERE id = $1 RETURNING votes',
+            [submission_id]
+        );
+
+        const updatedVotes = updateResult.rows[0]?.votes || 0;
+
+        res.json({
+            success: true,
+            votes: updatedVotes
+        });
+
+    } catch (error) {
+        console.error('Error removing vote:', error);
+        res.status(500).json({ error: 'Failed to remove vote' });
     }
 });
 

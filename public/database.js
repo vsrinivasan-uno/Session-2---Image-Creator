@@ -86,6 +86,13 @@ class DatabaseHelper {
         });
     }
 
+    async removeVoteForSubmission(submissionId, voterData) {
+        return this.apiCall(`/api/submissions/${submissionId}/unlike`, {
+            method: 'DELETE',
+            body: JSON.stringify(voterData)
+        });
+    }
+
     async checkVotingStatus(voterData) {
         return this.apiCall('/api/votes/check', {
             method: 'POST',
