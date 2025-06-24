@@ -148,7 +148,7 @@
                             <div class="prompt-input">
                                 <h5>✍️ Your Zero-Shot Prompt</h5>
                                 <textarea id="zeroShotPrompt" class="prompt-textarea" placeholder="Write your professional zero-shot prompt here. Be specific about style, quality, composition, and technical details."></textarea>
-                                <button class="btn btn-secondary btn-sm" onclick="platform.testPrompt('zeroShotPrompt', 'zero-shot')" style="margin-top: 0.5rem;">
+                                <button class="btn btn-secondary btn-sm" onclick="modelBuilder.testPrompt('zeroShotPrompt', 'zero-shot')" style="margin-top: 0.5rem;">
                                     <i class="fas fa-flask"></i> Test Prompt Quality
                                 </button>
                             </div>
@@ -864,7 +864,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                 <div class="prompt-input">
                                     <h5>Your Assignment Prompt</h5>
                                     <textarea id="assignmentPrompt" class="prompt-textarea" placeholder="Create your prompt based on the assignment requirements above..."></textarea>
-                                    <button class="btn btn-secondary btn-sm" onclick="platform.testAssignmentPrompt()" style="margin-top: 0.5rem;">
+                                    <button class="btn btn-secondary btn-sm" onclick="modelBuilder.testAssignmentPrompt()" style="margin-top: 0.5rem;">
                                         <i class="fas fa-flask"></i> Test Prompt Quality
                                     </button>
                                 </div>
@@ -921,7 +921,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                         <textarea id="assignmentAnalysis" class="notes-textarea" placeholder="Reflect on your process: What technique did you use? Why did you choose these parameters? What challenges did you face? What would you do differently?"></textarea>
                                     </div>
                                     <div class="assignment-submission">
-                                        <button class="btn btn-success btn-lg" onclick="platform.submitAssignment()">
+                                        <button class="btn btn-success btn-lg" onclick="modelBuilder.submitAssignment()">
                                             <i class="fas fa-paper-plane"></i>
                                             Submit Assignment
                                         </button>

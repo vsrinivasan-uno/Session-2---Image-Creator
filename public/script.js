@@ -2208,7 +2208,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     <button class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">
                         Cancel
                     </button>
-                    <button class="btn btn-primary" onclick="platform.processSubmission('${analysis}')">
+                    <button class="btn btn-primary" onclick="modelBuilder.processSubmission('${analysis}')">
                         <i class="fas fa-paper-plane"></i> Submit Assignment
                     </button>
                 </div>
