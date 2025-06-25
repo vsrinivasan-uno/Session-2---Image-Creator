@@ -112,7 +112,7 @@
     function loadFullStyles() {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'styles.css';
+        link.href = 'styles.min.css';
         link.media = 'print';
         link.onload = () => link.media = 'all';
         document.head.appendChild(link);
