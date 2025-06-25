@@ -1,74 +1,28 @@
-# Robots.txt for AI-CCORE by Vishva Prasanth Srinivasan
-# University of Nebraska Omaha (UNO) AI Research Platform
-
 User-agent: *
 Allow: /
 
-# Priority crawling for SEO-important pages
-Allow: /index.html
-Allow: /health.html
-Allow: /admin.html
-
-# Important assets for search engines
-Allow: /logo.webp
+# Important files for SEO
+Allow: /sitemap.xml
 Allow: /logo.png
-Allow: /ai-ccore-owl-logo.webp
-Allow: /ai-ccore-owl-logo.png
 Allow: /favicon.svg
 Allow: /favicon.ico
-Allow: /sitemap.xml
 
-# CSS and critical resources
-Allow: /styles.min.css
-Allow: /critical.css
+# Sitemap location
+Sitemap: https://www.aiccore-uno.ai/sitemap.xml
 
-# Sitemap location - Enhanced for discovery
-Sitemap: https://session-2-image-create.vercel.app/sitemap.xml
-
-# Optimized for major search engines
+# Allow all major search engines
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
-Crawl-delay: 1
 
 User-agent: Slurp
 Allow: /
-Crawl-delay: 1
 
-User-agent: DuckDuckBot
-Allow: /
-Crawl-delay: 1
-
-User-agent: Baiduspider
-Allow: /
-Crawl-delay: 2
-
-# Social media crawlers
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: LinkedInBot
-Allow: /
-
-# Block access to sensitive/development files
+# Block access to sensitive files (if any)
 Disallow: /database.js
-Disallow: /script.js
-Disallow: /script-core.js
-Disallow: /script-minimal.js
-Disallow: /sw.js
-Disallow: /*.min.js$
+Disallow: /*.js$
 
-# SEO Comments for crawler context
-# Platform: AI-CCORE - Advanced AI Prompt Engineering
-# Creator: Vishva Prasanth Srinivasan
-# Institution: University of Nebraska Omaha (UNO)
-# Focus: AI Education, Prompt Engineering, Machine Learning
-
-# Crawl delay for performance
+# Crawl delay (optional - helps prevent server overload)
 Crawl-delay: 1 

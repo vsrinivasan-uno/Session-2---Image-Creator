@@ -34,13 +34,30 @@ class LLMEducationPlatform {
         this.updateUI();
         this.loadDefaultAssignment();
         this.checkWikiModal();
+        
+        // Take over navigation if loaded after minimal script
+        if (window.navigationSetup) {
+            this.takeOverNavigation();
+        }
+    }
+
+    takeOverNavigation() {
+        // Remove existing listeners and set up new ones with full functionality
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', (e) => this.showSection(e.currentTarget.dataset.section));
+        });
     }
 
     setupEventListeners() {
-        // Navigation
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.showSection(e.currentTarget.dataset.section));
-        });
+        // Navigation - only set up if not already handled by minimal script
+        if (!window.navigationSetup) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => this.showSection(e.currentTarget.dataset.section));
+            });
+            window.navigationSetup = true;
+        }
 
         // Technique tabs (including assignment tabs)
         document.querySelectorAll('.technique-tab').forEach(tab => {

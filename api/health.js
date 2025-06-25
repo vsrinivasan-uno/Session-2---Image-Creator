@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
             const dbStartTime = Date.now();
             const pool = new Pool({
                 connectionString: process.env.DATABASE_URL || process.env.NEON_DATABASE_URL,
-                ssl: { rejectUnauthorized: false }
+                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
             });
             
             // Test connection and get database stats
@@ -320,9 +320,9 @@ module.exports = async (req, res) => {
         
         res.status(500).json({
             status: 'error',
-            timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
             error: error.message,
             responseTime: Date.now() - startTime
-        });
-    }
+  });
+} 
 }; 
