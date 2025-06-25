@@ -44,18 +44,21 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://www.aiccore-uno.ai/">
     
-    <!-- Preconnect for Performance -->
+    <!-- Performance Optimizations: Preconnect and DNS prefetch -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    
+    <!-- Critical resource preloads -->
+    <link rel="preload" href="logo.png" as="image" type="image/png">
+    <link rel="preload" href="styles.css" as="style">
     
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     
-    <!-- Stylesheet -->
+    <!-- Critical CSS - load synchronously -->
     <link rel="stylesheet" href="styles.css">
     
     <!-- Structured Data for Rich Snippets -->
@@ -91,7 +94,50 @@
     </script>
 </head>
 <body>
-    <script src="database.js"></script>
+    <!-- Load non-critical JavaScript after DOM content -->
+    <script>
+        // Inline critical JavaScript for immediate functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load external resources asynchronously
+            const loadResource = (href, rel = 'stylesheet', async = true) => {
+                const link = document.createElement('link');
+                link.rel = rel;
+                link.href = href;
+                if (async && rel === 'stylesheet') {
+                    link.media = 'print';
+                    link.onload = function() { this.media = 'all'; };
+                }
+                document.head.appendChild(link);
+            };
+            
+            // Load non-critical fonts asynchronously with optimal display strategy
+            loadResource('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            loadResource('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+            
+            // Lazy load background images after critical content
+            setTimeout(() => {
+                // Preload background images
+                const preloadImage = (src) => {
+                    const img = new Image();
+                    img.src = src;
+                    return img;
+                };
+                
+                // Preload both background images
+                const owlImg = preloadImage('ai-ccore-owl-logo.png');
+                const buildingImg = preloadImage('building-background.jpg');
+                
+                // Add class to enable backgrounds once first image loads
+                owlImg.onload = () => {
+                    document.body.classList.add('backgrounds-loaded');
+                };
+            }, 100); // Small delay to prioritize critical content
+        });
+    </script>
+    
+    <!-- Database script - defer to not block rendering -->
+    <script src="database.js" defer></script>
+    
     <div class="lab-background">
         <div class="container">
             <!-- Header -->
@@ -101,7 +147,8 @@
                 </div>
                 <div class="header-content">
                     <div class="header-logo-section">
-                        <img src="logo.png" alt="AI-CCORE Logo" class="header-logo">
+                        <!-- Optimized logo with explicit dimensions for performance -->
+                        <img src="logo.png" alt="AI-CCORE Logo" class="header-logo" width="120" height="120" loading="eager">
                         <div class="header-text">
                             <h1 class="main-title">
                                 AI Prompt Master
@@ -111,8 +158,6 @@
                     </div>
                 </div>
             </header>
-
-
 
             <!-- Enhanced Navigation with Progress -->
             <nav class="main-nav">
@@ -153,7 +198,6 @@
                             </div>
                         </div>
                     </button>
-
                 </div>
             </nav>
 
@@ -164,8 +208,6 @@
                         <i class="fas fa-magic"></i>
                         Master AI Prompting
                     </h2>
-
-
 
                     <!-- Technique Selection -->
                     <div class="technique-selection">
@@ -1050,7 +1092,6 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                 </div>
             </section>
 
-
         </div>
     </div>
 
@@ -1339,6 +1380,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
         </div>
      </footer>
 
-    <script src="script.js"></script>
+    <!-- Main script with defer to not block rendering -->
+    <script src="script.js" defer></script>
 </body>
 </html> 

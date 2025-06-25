@@ -50,7 +50,7 @@ body {
     position: relative;
 }
 
-/* Building full page background - lowest layer */
+/* Building full page background - lowest layer - lazy loaded */
 body::after {
     content: '';
     position: fixed;
@@ -58,16 +58,16 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('building-background.jpg');
     background-repeat: no-repeat;
     background-position: center center;
     background-size: cover;
     opacity: 0.15;
     z-index: -2;
     pointer-events: none;
+    /* Remove background-image to load lazily via JavaScript */
 }
 
-/* Owl backdrop with fade effect - above building */
+/* Owl backdrop with fade effect - above building - lazy loaded */
 body::before {
     content: '';
     position: fixed;
@@ -75,12 +75,21 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('ai-ccore-owl-logo.png');
     background-repeat: no-repeat;
     background-position: right -1% top 30%;
     background-size: 400px auto;
     z-index: -1;
     pointer-events: none;
+    /* Remove background-image to load lazily via JavaScript */
+}
+
+/* Classes for lazy loading backgrounds */
+body.backgrounds-loaded::after {
+    background-image: url('building-background.jpg');
+}
+
+body.backgrounds-loaded::before {
+    background-image: url('ai-ccore-owl-logo.png');
 }
 
 /* Container and Layout */
