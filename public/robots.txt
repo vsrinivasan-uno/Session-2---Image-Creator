@@ -23,7 +23,7 @@ Allow: /styles.min.css
 Allow: /critical.css
 
 # Sitemap location - Enhanced for discovery
-Sitemap: hhttps://session-2-image-create.vercel.app/sitemap.xml
+Sitemap: https://session-2-image-create.vercel.app/sitemap.xml
 
 # Optimized for major search engines
 User-agent: Googlebot
