@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Important files for SEO
+Allow: /sitemap.xml
+Allow: /Logo.png
+Allow: /favicon.svg
+Allow: /favicon.ico
+
+# Sitemap location
+Sitemap: https://www.aiccore-uno.ai/sitemap.xml
+
+# Allow all major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Block access to sensitive files (if any)
+Disallow: /database.js
+Disallow: /*.js$
+
+# Crawl delay (optional - helps prevent server overload)
+Crawl-delay: 1 
