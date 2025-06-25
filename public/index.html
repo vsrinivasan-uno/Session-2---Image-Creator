@@ -49,17 +49,27 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     
-    <!-- Critical resource preloads -->
+    <!-- Critical resource preloads for performance -->
     <link rel="preload" href="logo.png" as="image" type="image/png">
+    <link rel="preload" href="critical.css" as="style">
     <link rel="preload" href="styles.css" as="style">
+    
+    <!-- Advanced resource hints -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="prefetch" href="ai-ccore-owl-logo.png">
+    <link rel="prefetch" href="building-background.jpg">
     
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     
-    <!-- Critical CSS - load synchronously -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Critical CSS - inline for immediate rendering -->
+    <link rel="stylesheet" href="critical.css">
+    <noscript>
+        <link rel="stylesheet" href="styles.css">
+    </noscript>
     
     <!-- Structured Data for Rich Snippets -->
     <script type="application/ld+json">
@@ -94,46 +104,125 @@
     </script>
 </head>
 <body>
-    <!-- Load non-critical JavaScript after DOM content -->
+    <!-- Advanced Performance Optimization Script -->
     <script>
-        // Inline critical JavaScript for immediate functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load external resources asynchronously
-            const loadResource = (href, rel = 'stylesheet', async = true) => {
+        // Performance optimization and critical path management
+        (function() {
+            'use strict';
+            
+            // Service Worker registration for caching
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('SW registered: ', registration);
+                        })
+                        .catch(registrationError => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                });
+            }
+            
+            // Critical CSS loaded, now load full stylesheet asynchronously
+            const loadStylesheet = (href) => {
                 const link = document.createElement('link');
-                link.rel = rel;
+                link.rel = 'stylesheet';
                 link.href = href;
-                if (async && rel === 'stylesheet') {
-                    link.media = 'print';
-                    link.onload = function() { this.media = 'all'; };
-                }
+                link.media = 'print';
+                link.onload = function() { 
+                    this.media = 'all';
+                    this.onload = null;
+                };
+                // Fallback for browsers that don't support onload
+                setTimeout(() => { if (link.media === 'print') link.media = 'all'; }, 3000);
                 document.head.appendChild(link);
             };
             
-            // Load non-critical fonts asynchronously with optimal display strategy
-            loadResource('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-            loadResource('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+            // Load full stylesheet after critical path
+            loadStylesheet('styles.css');
             
-            // Lazy load background images after critical content
-            setTimeout(() => {
-                // Preload background images
-                const preloadImage = (src) => {
-                    const img = new Image();
-                    img.src = src;
-                    return img;
+            // DOM Content Loaded optimizations
+            document.addEventListener('DOMContentLoaded', function() {
+                // Performance timing measurement
+                if (window.performance) {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        console.log('Performance Metrics:', {
+                            domContentLoaded: perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart,
+                            loadComplete: perfData.loadEventEnd - perfData.loadEventStart,
+                            firstPaint: performance.getEntriesByType('paint')[0]?.startTime || 'N/A'
+                        });
+                    }, 0);
+                }
+                
+                // Load external resources with intersection observer for better performance
+                const loadExternalResource = (href, rel = 'stylesheet') => {
+                    const link = document.createElement('link');
+                    link.rel = rel;
+                    link.href = href;
+                    if (rel === 'stylesheet') {
+                        link.media = 'print';
+                        link.onload = function() { this.media = 'all'; };
+                    }
+                    document.head.appendChild(link);
                 };
                 
-                // Preload both background images
-                const owlImg = preloadImage('ai-ccore-owl-logo.png');
-                const buildingImg = preloadImage('building-background.jpg');
+                // Load fonts and icons with staggered timing for optimal performance
+                setTimeout(() => {
+                    loadExternalResource('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+                }, 50);
                 
-                // Add class to enable backgrounds once first image loads
-                owlImg.onload = () => {
-                    document.body.classList.add('backgrounds-loaded');
+                setTimeout(() => {
+                    loadExternalResource('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+                }, 100);
+                
+                // Intersection Observer for lazy loading background images
+                const lazyLoadBackgrounds = () => {
+                    // Use Intersection Observer for better performance
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                // Load background images when main content is visible
+                                const preloadImage = (src) => {
+                                    const img = new Image();
+                                    img.src = src;
+                                    return img;
+                                };
+                                
+                                const owlImg = preloadImage('ai-ccore-owl-logo.png');
+                                const buildingImg = preloadImage('building-background.jpg');
+                                
+                                owlImg.onload = () => {
+                                    document.body.classList.add('backgrounds-loaded');
+                                };
+                                
+                                observer.disconnect(); // Stop observing after loading
+                            }
+                        });
+                    }, { threshold: 0.1 });
+                    
+                    // Observe the main header (critical content)
+                    const header = document.querySelector('.main-header');
+                    if (header) observer.observe(header);
                 };
-            }, 100); // Small delay to prioritize critical content
-        });
+                
+                // Initialize lazy loading
+                if ('IntersectionObserver' in window) {
+                    lazyLoadBackgrounds();
+                } else {
+                    // Fallback for older browsers
+                    setTimeout(() => {
+                        const owlImg = new Image();
+                        owlImg.src = 'ai-ccore-owl-logo.png';
+                        owlImg.onload = () => document.body.classList.add('backgrounds-loaded');
+                    }, 200);
+                }
+            });
+        })();
     </script>
+    
+    <!-- Core JavaScript - essential functionality only -->
+    <script src="script-core.js"></script>
     
     <!-- Database script - defer to not block rendering -->
     <script src="database.js" defer></script>
