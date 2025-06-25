@@ -3,7 +3,7 @@ Allow: /
 
 # Important files for SEO
 Allow: /sitemap.xml
-Allow: /Logo.png
+Allow: /logo.png
 Allow: /favicon.svg
 Allow: /favicon.ico
 
