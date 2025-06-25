@@ -83,12 +83,21 @@ body::before {
     /* Remove background-image to load lazily via JavaScript */
 }
 
-/* Classes for lazy loading backgrounds */
+/* Classes for lazy loading backgrounds with WebP support */
 body.backgrounds-loaded::after {
-    background-image: url('building-background.jpg');
+    background-image: url('building-background.webp');
 }
 
 body.backgrounds-loaded::before {
+    background-image: url('ai-ccore-owl-logo.webp');
+}
+
+/* Fallback for browsers that don't support WebP */
+.no-webp body.backgrounds-loaded::after {
+    background-image: url('building-background.jpg');
+}
+
+.no-webp body.backgrounds-loaded::before {
     background-image: url('ai-ccore-owl-logo.png');
 }
 
