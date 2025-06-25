@@ -141,10 +141,36 @@ function getRealIP(req) {
 
 // API Routes
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check - Use the comprehensive health check from api/health.js
+app.get('/api/health', async (req, res) => {
+    try {
+        // Import and use the comprehensive health check
+        const healthCheck = require('./api/health.js');
+        await healthCheck(req, res);
+    } catch (error) {
+        console.error('Health check error:', error);
+        res.status(500).json({
+            status: 'error',
+            timestamp: new Date().toISOString(),
+            error: error.message
+        });
+    }
 });
+
+// Authentication endpoint for health dashboard
+app.post('/api/auth', async (req, res) => {
+    try {
+        const authHandler = require('./api/auth.js');
+        await authHandler(req, res);
+    } catch (error) {
+        console.error('Auth error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Authentication service error'
+        });
+    }
+});
+
 
 // Debug endpoint to check IP detection
 app.get('/api/debug/ip', (req, res) => {
