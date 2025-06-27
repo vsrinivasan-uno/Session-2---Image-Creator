@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-const { v4: uuidv4 } = require('uuid');
 
 // Database connection
 let pool;
@@ -17,19 +16,19 @@ async function initializeDatabase() {
     if (!pool) return false;
     
     try {
-        // Create submissions table
+        // Create assignments table
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS submissions (
+            CREATE TABLE IF NOT EXISTS assignments (
                 id SERIAL PRIMARY KEY,
-                assignment_id INTEGER,
-                student_name VARCHAR(255) NOT NULL,
-                student_email VARCHAR(255),
-                prompt_data JSONB NOT NULL,
-                image_url TEXT,
-                submission_code VARCHAR(100) UNIQUE,
-                votes INTEGER DEFAULT 0,
-                is_revealed BOOLEAN DEFAULT false,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                class_id INTEGER,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                requirements TEXT,
+                technique VARCHAR(50) NOT NULL,
+                due_date TIMESTAMP,
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
@@ -60,43 +59,42 @@ export default async function handler(req, res) {
 
     // Health check
     if (req.method === 'GET' && req.query.health === 'check') {
-        return res.json({ status: 'healthy', service: 'submissions' });
+        return res.json({ status: 'healthy', service: 'assignments' });
     }
 
-    // Get all submissions
+    // Get all assignments
     if (req.method === 'GET') {
         try {
             await ensureDatabase();
             
             const result = await pool.query(`
-                SELECT * FROM submissions 
-                ORDER BY submitted_at DESC
+                SELECT * FROM assignments 
+                ORDER BY created_at DESC
             `);
             
             return res.json(result.rows);
         } catch (error) {
-            console.error('Error fetching submissions:', error);
-            return res.status(500).json({ error: 'Failed to fetch submissions' });
+            console.error('Error fetching assignments:', error);
+            return res.status(500).json({ error: 'Failed to fetch assignments' });
         }
     }
 
-    // Create submission
+    // Create assignment
     if (req.method === 'POST') {
         try {
             await ensureDatabase();
             
-            const { assignment_id, student_name, student_email, prompt_data, image_url } = req.body;
-            const submission_code = uuidv4().substring(0, 12).toUpperCase();
+            const { class_id, title, description, requirements, technique, due_date } = req.body;
             
             const result = await pool.query(
-                'INSERT INTO submissions (assignment_id, student_name, student_email, prompt_data, image_url, submission_code) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-                [assignment_id, student_name, student_email, JSON.stringify(prompt_data), image_url, submission_code]
+                'INSERT INTO assignments (class_id, title, description, requirements, technique, due_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                [class_id, title, description, requirements, technique, due_date]
             );
             
             return res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error submitting assignment:', error);
-            return res.status(500).json({ error: 'Failed to submit assignment' });
+            console.error('Error creating assignment:', error);
+            return res.status(500).json({ error: 'Failed to create assignment' });
         }
     }
 

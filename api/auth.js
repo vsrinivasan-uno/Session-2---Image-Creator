@@ -4,11 +4,16 @@ module.exports = async (req, res) => {
     try {
         // Set CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
         
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
+        }
+
+        // Health check
+        if (req.method === 'GET' && req.query.health === 'check') {
+            return res.json({ status: 'healthy', service: 'authentication' });
         }
 
         if (req.method !== 'POST') {
