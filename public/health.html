@@ -100,6 +100,12 @@
             gap: 0.5rem;
             font-size: 0.9rem;
         }
+
+        #internalApisStatus .status-details {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+        }
         
         .detail-label {
             color: #6b7280;
@@ -426,6 +432,12 @@
                     <span class="detail-value" id="assignmentsApiStatus">Checking...</span>
                     <span class="detail-label">Votes:</span>
                     <span class="detail-value" id="votesApiStatus">Checking...</span>
+                    <span class="detail-label">Playground Gallery:</span>
+                    <span class="detail-value" id="playgroundGalleryApiStatus">Checking...</span>
+                    <span class="detail-label">User Analytics:</span>
+                    <span class="detail-value" id="userAnalyticsApiStatus">Checking...</span>
+                    <span class="detail-label">Authentication:</span>
+                    <span class="detail-value" id="authApiStatus">Checking...</span>
                 </div>
             </div>
         </div>
@@ -470,6 +482,10 @@
                 <div class="metric-item">
                     <div class="metric-value" id="votesCount">--</div>
                     <div class="metric-label">Votes</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="playgroundGalleryCount">--</div>
+                    <div class="metric-label">Playground Images</div>
                 </div>
             </div>
         </div>
@@ -647,30 +663,87 @@
 
             async checkInternalAPIs() {
                 const card = document.getElementById('internalApisStatus');
+                let healthyCount = 0;
+                let totalCount = 6;
+                
                 try {
-                    // Use API data if available
-                    if (this.apiData && this.apiData.checks && this.apiData.checks.internalAPIs) {
-                        const apiCheck = this.apiData.checks.internalAPIs;
-                        
-                        // Check individual APIs
-                        document.getElementById('submissionsApiStatus').textContent = 
-                            apiCheck.apis.submissions ? apiCheck.apis.submissions.status : 'Unknown';
-                        document.getElementById('assignmentsApiStatus').textContent = 
-                            apiCheck.apis.assignments ? apiCheck.apis.assignments.status : 'Unknown';
-                        document.getElementById('votesApiStatus').textContent = 
-                            apiCheck.apis.votes ? apiCheck.apis.votes.status : 'Unknown';
-                        
-                        const statusMap = { 'healthy': 'healthy', 'warning': 'warning', 'error': 'error' };
-                        this.setCardStatus(card, statusMap[apiCheck.status] || 'warning');
-                    } else {
-                        // Fallback
-                        document.getElementById('submissionsApiStatus').textContent = 'Unknown';
-                        document.getElementById('assignmentsApiStatus').textContent = 'Unknown';
-                        document.getElementById('votesApiStatus').textContent = 'Unknown';
+                    // Check submissions API
+                    try {
+                        const submissionsResponse = await fetch('/api/submissions', { method: 'HEAD' });
+                        const isOk = submissionsResponse.ok;
+                        document.getElementById('submissionsApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('submissionsApiStatus').textContent = 'Failed';
+                    }
+
+                    // Check assignments API
+                    try {
+                        const assignmentsResponse = await fetch('/api/assignments', { method: 'HEAD' });
+                        const isOk = assignmentsResponse.ok;
+                        document.getElementById('assignmentsApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('assignmentsApiStatus').textContent = 'Failed';
+                    }
+
+                    // Check votes API
+                    try {
+                        const votesResponse = await fetch('/api/votes/check', { method: 'GET' });
+                        const isOk = votesResponse.ok;
+                        document.getElementById('votesApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('votesApiStatus').textContent = 'Failed';
+                    }
+
+                    // Check playground gallery API
+                    try {
+                        const playgroundResponse = await fetch('/api/playground-gallery', { method: 'HEAD' });
+                        const isOk = playgroundResponse.ok;
+                        document.getElementById('playgroundGalleryApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('playgroundGalleryApiStatus').textContent = 'Failed';
+                    }
+
+                    // Check user analytics API
+                    try {
+                        const analyticsResponse = await fetch('/api/admin/user-analytics', { method: 'HEAD' });
+                        const isOk = analyticsResponse.ok;
+                        document.getElementById('userAnalyticsApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('userAnalyticsApiStatus').textContent = 'Failed';
+                    }
+
+                    // Check authentication API
+                    try {
+                        const authResponse = await fetch('/api/auth', { method: 'HEAD' });
+                        const isOk = authResponse.ok;
+                        document.getElementById('authApiStatus').textContent = isOk ? 'OK' : 'Failed';
+                        if (isOk) healthyCount++;
+                    } catch {
+                        document.getElementById('authApiStatus').textContent = 'Failed';
+                    }
+
+                    // Set overall status based on healthy count
+                    if (healthyCount === totalCount) {
+                        this.setCardStatus(card, 'healthy');
+                    } else if (healthyCount >= totalCount * 0.7) {
                         this.setCardStatus(card, 'warning');
+                    } else {
+                        this.setCardStatus(card, 'error');
                     }
                 } catch (error) {
-                    this.setCardStatus(card, 'error');
+                    // In case of general failure, mark all as unknown
+                    document.getElementById('submissionsApiStatus').textContent = 'Unknown';
+                    document.getElementById('assignmentsApiStatus').textContent = 'Unknown';
+                    document.getElementById('votesApiStatus').textContent = 'Unknown';
+                    document.getElementById('playgroundGalleryApiStatus').textContent = 'Unknown';
+                    document.getElementById('userAnalyticsApiStatus').textContent = 'Unknown';
+                    document.getElementById('authApiStatus').textContent = 'Unknown';
+                    this.setCardStatus(card, 'warning');
                 }
             }
 
@@ -720,6 +793,7 @@
                     document.getElementById('assignmentsCount').textContent = tables.assignments || '0';
                     document.getElementById('submissionsCount').textContent = tables.submissions || '0';
                     document.getElementById('votesCount').textContent = tables.votes || '0';
+                    document.getElementById('playgroundGalleryCount').textContent = tables.playground_gallery || '0';
                     document.getElementById('databaseMetrics').style.display = 'block';
                 } else {
                     document.getElementById('databaseMetrics').style.display = 'none';

@@ -306,12 +306,21 @@
                                 <div class="info-grid">
                                     <div class="info-card good">
                                         <h5>✅ Good Example</h5>
-                                        <div class="example-text">Examples:
-1. Professional surgeon: Confident female surgeon in blue scrubs, standing in modern operating room with medical equipment
-2. Corporate executive: Distinguished businessman in navy suit, sitting at glass desk in downtown office with city view
-3. Master chef: Experienced chef in white uniform, working in professional kitchen with stainless steel surfaces
+                                        <div class="example-text">IMPORTANT: Create ONE single image with ONE individual subject only. Do NOT create a collage or multiple panels.
 
-Following this pattern, create: [Your professional portrait request]</div>
+Style Reference Examples (for learning patterns only):
+
+Style Pattern 1:
+Professional surgeon working alone in modern operating room, wearing blue scrubs, focused on medical procedures, surrounded by advanced equipment, bright hospital lighting, medical magazine photography quality.
+
+Style Pattern 2:
+Corporate executive working independently at executive desk, wearing navy business suit, reviewing documents, modern office with city skyline, professional lighting, business magazine photography style.
+
+SINGLE IMAGE REQUIREMENT: Learn the professional composition style, lighting approach, and quality standards from these examples, but create ONLY ONE unified image with ONE subject.
+
+CREATE ONE SINGLE IMAGE: [Your professional portrait request]
+
+IMPORTANT: Generate ONE cohesive professional portrait, NOT a multi-panel collage or grid of examples.</div>
                                     </div>
                                     <div class="info-card bad">
                                         <h5>❌ Poor Example</h5>
@@ -328,6 +337,8 @@ Make a photographer.</div>
                                         <li>Maintain consistent style and structure</li>
                                         <li>Show the exact pattern you want replicated</li>
                                         <li>End with clear instruction for the new task</li>
+                                        <li><strong>⚠️ Avoid collages:</strong> Emphasize "working alone" or "individual" to prevent AI from combining all examples into one image</li>
+                                        <li><strong>🎯 Pattern focus:</strong> Use "following the same style pattern" rather than "like these examples"</li>
                                     </ul>
                                 </div>
                             </div>
@@ -353,6 +364,9 @@ Make a photographer.</div>
                             <!-- Few-Shot Builder Components -->
                             <div class="technique-components">
                                 <h5>🧩 Build Your Few-Shot Prompt</h5>
+                                <div class="practice-note">
+                                    <p><strong>🚫 Anti-Collage Strategy:</strong> Always begin prompts with "Create ONE single image" and end with "NOT a multi-panel collage". Use "working alone" and "individual professional" in examples. The AI learns <em>style patterns</em>, not subject combinations.</p>
+                                </div>
                                 
                                 <div class="component-section">
                                     <h6>📝 Examples (Add N examples)</h6>
@@ -910,6 +924,111 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Modern Creative Gallery Section -->
+                    <div class="creative-gallery-overlay" id="playgroundGallery" style="display: none;">
+                        <div class="creative-gallery-container">
+                            <!-- Gallery Header with Search & Controls -->
+                            <div class="gallery-modern-header">
+                                <div class="gallery-header-left">
+                                    <div class="gallery-logo">
+                                        <i class="fas fa-palette"></i>
+                                    </div>
+                                    <div class="gallery-title-section">
+                                        <h2>Creative Gallery</h2>
+                                        <p>Discover amazing AI art from the community</p>
+                                    </div>
+                                </div>
+                                <div class="gallery-header-right">
+                                    <button class="close-gallery-btn" onclick="modelBuilder.togglePlaygroundGallery()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Smart Search & Filter Bar -->
+                            <div class="gallery-smart-controls">
+                                <div class="search-container">
+                                    <div class="search-input-wrapper">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" id="gallerySearchInput" placeholder="Search prompts, techniques, or styles..." class="smart-search-input">
+                                        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="filter-pills-container">
+                                    <div class="filter-pill active" data-filter="all">
+                                        <span>All</span>
+                                        <div class="pill-count" id="countAll">0</div>
+                                    </div>
+                                    <div class="filter-pill" data-filter="zero-shot">
+                                        <span>Zero-Shot</span>
+                                        <div class="pill-count" id="countZeroShot">0</div>
+                                    </div>
+                                    <div class="filter-pill" data-filter="few-shot">
+                                        <span>Few-Shot</span>
+                                        <div class="pill-count" id="countFewShot">0</div>
+                                    </div>
+                                    <div class="filter-pill" data-filter="chain-thought">
+                                        <span>Chain-of-Thought</span>
+                                        <div class="pill-count" id="countChainThought">0</div>
+                                    </div>
+                                    <div class="filter-pill" data-filter="role-play">
+                                        <span>Role-Play</span>
+                                        <div class="pill-count" id="countRolePlay">0</div>
+                                    </div>
+                                    <div class="filter-pill" data-filter="structured">
+                                        <span>Structured</span>
+                                        <div class="pill-count" id="countStructured">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modern Masonry Gallery Grid -->
+                            <div class="masonry-gallery-container">
+                                <div class="masonry-gallery-grid" id="playgroundGalleryGrid">
+                                    <!-- Gallery items will be loaded here -->
+                                </div>
+                                
+                                <!-- Loading Animation -->
+                                <div class="gallery-loading-modern" id="galleryLoading" style="display: none;">
+                                    <div class="modern-loading-animation">
+                                        <div class="loading-brush"></div>
+                                        <div class="loading-paint"></div>
+                                    </div>
+                                    <p>Discovering more masterpieces...</p>
+                                </div>
+                                
+                                <!-- Load More with Intersection Observer -->
+                                <div class="gallery-load-trigger" id="galleryLoadTrigger" style="display: none;">
+                                    <div class="load-trigger-animation">
+                                        <i class="fas fa-magic"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div class="gallery-empty-state" id="galleryEmptyState" style="display: none;">
+                                <div class="empty-illustration">
+                                    <i class="fas fa-palette"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <h3>No artwork found</h3>
+                                <p>Try a different search term or filter</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modern Gallery Toggle Button -->
+                    <div class="gallery-toggle-container">
+                        <button class="modern-gallery-btn" onclick="modelBuilder.togglePlaygroundGallery()" title="Playground Gallery">
+                            <div class="gallery-icon-wrapper">
+                                <i class="fas fa-palette"></i>
+                                <span class="gallery-pulse"></span>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </section>

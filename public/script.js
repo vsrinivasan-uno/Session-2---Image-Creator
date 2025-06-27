@@ -22,6 +22,10 @@ class LLMEducationPlatform {
         this.voterId = null;
         this.voterFingerprint = null;
         this.votedSubmissions = new Set();
+        // User tracking for playground analytics
+        this.userSessionId = null;
+        this.userFingerprint = null;
+        this.browserInfo = null;
     }
 
     init() {
@@ -37,6 +41,12 @@ class LLMEducationPlatform {
         
         // Initialize auto-resize for all textareas
         this.initAllAutoResize();
+        
+        // Initialize playground gallery
+        this.initializePlaygroundGallery();
+        
+        // Initialize user tracking for playground analytics
+        this.initializeUserTracking();
         
         // Take over navigation if loaded after minimal script
         if (window.navigationSetup) {
@@ -1336,18 +1346,25 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const task = document.getElementById('fewShotTask').value.trim();
         const display = document.getElementById('fewShotFinalPrompt');
         
-        let prompt = 'Examples:\n';
+        // Build anti-collage few-shot prompt with explicit single subject focus
+        let prompt = 'IMPORTANT: Create ONE single image with ONE individual subject only. Do NOT create a collage or multiple panels.\n\n';
+        prompt += 'Style Reference Examples (for learning patterns only):\n\n';
+        
         examples.forEach((example, index) => {
             const text = example.value.trim();
             if (text) {
-                prompt += `${index + 1}. ${text}\n`;
+                prompt += `Style Pattern ${index + 1}:\n${text}\n\n`;
             }
         });
         
+        if (examples.length > 0) {
+            prompt += 'SINGLE IMAGE REQUIREMENT: Learn the professional composition style, lighting approach, and quality standards from these examples, but create ONLY ONE unified image with ONE subject.\n\n';
+        }
+        
         if (task) {
-            prompt += `\nFollowing this pattern, ${task}`;
+            prompt += `CREATE ONE SINGLE IMAGE: ${task}\n\nIMPORTANT: Generate ONE cohesive professional portrait, NOT a multi-panel collage or grid of examples.`;
         } else {
-            prompt += '\nFollowing this pattern, create: [your specific request]';
+            prompt += 'CREATE ONE SINGLE IMAGE: [your specific request]\n\nIMPORTANT: Generate ONE cohesive professional portrait, NOT a multi-panel collage or grid of examples.';
         }
         
         display.textContent = prompt;
@@ -1621,6 +1638,9 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         const textareas = document.querySelectorAll('textarea.auto-resize, textarea.structure-input');
         textareas.forEach(textarea => {
             this.setupAutoResize(textarea);
+            // Trigger initial resize to handle pre-filled content
+            const event = new Event('input', { bubbles: true });
+            textarea.dispatchEvent(event);
         });
     }
 
@@ -1683,7 +1703,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             temp = parseFloat(document.getElementById('fewShotTemperature')?.value || 0.3);
             topP = parseFloat(document.getElementById('fewShotTopP')?.value || 0.9);
             topK = parseInt(document.getElementById('fewShotTopK')?.value || 70);
-            selectedModel = document.getElementById('fewShotAiModel')?.value || 'flux';
+            // Force Turbo for Few-Shot regardless of user selection
+            selectedModel = 'turbo';
         } else if (technique === 'chain-thought') {
             temp = parseFloat(document.getElementById('chainThoughtTemperature')?.value || 0.3);
             topP = parseFloat(document.getElementById('chainThoughtTopP')?.value || 0.9);
@@ -1759,6 +1780,9 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 this.saveProgress();
                 this.updateProgressTracker();
 
+                // Save to playground gallery
+                this.saveToPlaygroundGallery(this.currentModel);
+
                 this.showNotification('Image generated successfully!', 'success');
             };
             
@@ -1808,17 +1832,17 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     // Few-Shot Examples
     loadFewShotGood() {
-        // Load examples into the component fields
+        // Load examples into the component fields - Single subject focus with consistent pattern
         const examples = [
-            'Software Engineer: Focused developer at modern workstation with multiple monitors displaying code, wearing casual tech company attire, natural office lighting, professional technology magazine photography style.',
-            'Environmental Scientist: Dedicated researcher in field gear collecting samples outdoors, surrounded by natural landscape with scientific equipment, golden hour lighting, documentary photography quality.',
-            'Financial Advisor: Professional consultant in business attire reviewing documents at polished conference table, modern office setting with city views, corporate photography standard.'
+            'Professional software engineer working alone at modern workstation, focused on coding tasks, wearing contemporary tech company attire, surrounded by development tools and multiple monitors, natural office lighting creates professional atmosphere, technology magazine photography style with clean composition.',
+            'Dedicated environmental scientist conducting solo field research, collecting samples in natural outdoor setting, wearing appropriate field gear, surrounded by scientific equipment and natural landscape, golden hour lighting enhances the scene, documentary photography quality with authentic feel.',
+            'Expert financial advisor working independently at conference table, reviewing important documents, dressed in professional business attire, modern office environment with city skyline background, corporate lighting setup, business magazine photography standard with executive presence.'
         ];
         
-        const task = 'create a professional teacher in classroom setting with educational materials and natural teaching environment, inspiring educational magazine photography quality.';
+        const task = 'a professional teacher working alone in classroom setting, engaged with educational materials, wearing appropriate teaching attire, surrounded by learning resources and classroom technology, natural lighting from classroom windows, educational magazine photography quality with inspiring composition.';
         
         this.loadFewShotComponents(examples, task);
-        this.showNotification('Good few-shot example loaded!', 'success');
+        this.showNotification('Improved few-shot example loaded - single subject focus!', 'success');
     }
 
     loadFewShotComponents(examples, task) {
@@ -1843,13 +1867,20 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         });
         
         // Set task
-        document.getElementById('fewShotTask').value = task;
+        const taskTextarea = document.getElementById('fewShotTask');
+        taskTextarea.value = task;
         
         // Setup auto-resize for loaded textareas
         setTimeout(() => {
             container.querySelectorAll('textarea').forEach(textarea => {
                 this.setupAutoResize(textarea);
+                // Trigger resize for textareas with content
+                textarea.dispatchEvent(new Event('input'));
             });
+            // Also setup auto-resize for the task textarea
+            this.setupAutoResize(taskTextarea);
+            // Trigger resize for task textarea with content
+            taskTextarea.dispatchEvent(new Event('input'));
         }, 100);
         
         // Update the final prompt display
@@ -1870,16 +1901,16 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
 
     loadFewShotBest() {
         const examples = [
-            'Distinguished Technology Leader: Senior software architect in smart casual attire at modern tech workspace, surrounded by multiple monitors and innovation tools, natural office lighting with urban backdrop, technology magazine photography quality.',
-            'Expert Research Scientist: Accomplished laboratory researcher in professional lab coat, working with advanced scientific equipment in modern research facility, controlled lighting environment, scientific publication photography standard.',
-            'Master Craftsperson Profile: Skilled artisan in workshop setting with traditional tools and handcrafted works, natural lighting from workshop windows, artisan magazine photography style, authentic documentation quality.',
-            'Professional Educator Portrait: Experienced instructor in classroom environment with teaching materials and educational technology, inspiring natural lighting, education publication photography standard, portfolio-quality composition.'
+            'Distinguished senior technology leader working independently at executive workspace, wearing smart casual attire, focused on innovation strategy, surrounded by cutting-edge technology displays and analytical tools, natural office lighting with urban skyline backdrop, technology magazine photography quality with authoritative composition.',
+            'Accomplished research scientist working alone in state-of-the-art laboratory, wearing professional lab coat, conducting advanced research with sophisticated scientific equipment, controlled laboratory lighting environment, scientific publication photography standard with precision focus.',
+            'Master craftsperson creating individually in traditional workshop, wearing artisan work attire, skillfully using specialized hand tools, surrounded by handcrafted works and natural materials, warm natural lighting from workshop windows, artisan magazine photography style with authentic documentation quality.',
+            'Experienced professional educator teaching independently in modern classroom, wearing contemporary professional attire, engaging with educational technology and teaching materials, inspiring natural lighting from classroom environment, education publication photography standard with portfolio-quality composition.'
         ];
         
-        const task = 'create a professional consultant in modern office setting with business materials and collaborative workspace, natural lighting and corporate magazine photography quality.';
+        const task = 'an expert business consultant working alone in executive office setting, wearing professional business attire, reviewing strategic materials, surrounded by modern business technology and collaborative tools, natural office lighting with corporate atmosphere, business magazine photography quality with executive presence.';
         
         this.loadFewShotComponents(examples, task);
-        this.showNotification('Best practice few-shot example loaded!', 'success');
+        this.showNotification('Best practice few-shot example loaded - pattern mastery!', 'success');
     }
 
     // Chain-of-Thought Examples
@@ -1927,11 +1958,15 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         setTimeout(() => {
             container.querySelectorAll('textarea').forEach(textarea => {
                 this.setupAutoResize(textarea);
+                // Trigger resize for textareas with content
+                textarea.dispatchEvent(new Event('input'));
             });
             // Also setup auto-resize for the final instruction textarea
             const finalTextarea = document.getElementById('chainThoughtFinal');
             if (finalTextarea) {
                 this.setupAutoResize(finalTextarea);
+                // Trigger resize for textareas with content
+                finalTextarea.dispatchEvent(new Event('input'));
             }
         }, 100);
         
@@ -1990,6 +2025,8 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 const textarea = document.getElementById(id);
                 if (textarea) {
                     this.setupAutoResize(textarea);
+                    // Trigger resize for textareas with content
+                    textarea.dispatchEvent(new Event('input'));
                 }
             });
         }, 100);
@@ -3803,7 +3840,148 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         return this.votedSubmissions.has(submissionId);
     }
 
+    // User Tracking for Playground Analytics
+    initializeUserTracking() {
+        // Generate session ID if not exists
+        if (!this.userSessionId) {
+            this.userSessionId = this.generateSessionId();
+            sessionStorage.setItem('user-session-id', this.userSessionId);
+        }
+        
+        // Generate comprehensive browser fingerprint
+        this.userFingerprint = this.generateBrowserFingerprint();
+        
+        // Collect detailed browser information
+        this.browserInfo = this.collectBrowserInfo();
+        
+        // Store in session storage for consistency during session
+        sessionStorage.setItem('user-fingerprint', this.userFingerprint);
+        sessionStorage.setItem('browser-info', JSON.stringify(this.browserInfo));
+    }
 
+    generateSessionId() {
+        // Check session storage first
+        const existing = sessionStorage.getItem('user-session-id');
+        if (existing) {
+            this.userSessionId = existing;
+            return existing;
+        }
+        
+        // Generate new session ID
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        return `session_${timestamp}_${random}`;
+    }
+
+    generateBrowserFingerprint() {
+        // Check session storage first
+        const existing = sessionStorage.getItem('user-fingerprint');
+        if (existing) {
+            this.userFingerprint = existing;
+            return existing;
+        }
+        
+        // Collect fingerprint components
+        const components = [];
+        
+        // Screen information
+        components.push(screen.width);
+        components.push(screen.height);
+        components.push(screen.colorDepth);
+        components.push(screen.pixelDepth);
+        
+        // Browser information
+        components.push(navigator.userAgent);
+        components.push(navigator.language);
+        components.push(navigator.languages?.join(',') || '');
+        components.push(navigator.platform);
+        components.push(navigator.cookieEnabled);
+        components.push(navigator.doNotTrack);
+        
+        // Timezone
+        components.push(Intl.DateTimeFormat().resolvedOptions().timeZone);
+        
+        // Browser features
+        components.push(typeof localStorage !== 'undefined');
+        components.push(typeof sessionStorage !== 'undefined');
+        components.push(typeof indexedDB !== 'undefined');
+        components.push(typeof WebGL2RenderingContext !== 'undefined');
+        
+        // Canvas fingerprinting (basic)
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Browser fingerprint', 2, 2);
+            components.push(canvas.toDataURL());
+        } catch (e) {
+            components.push('canvas-error');
+        }
+        
+        // WebGL fingerprinting (basic)
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                components.push(gl.getParameter(gl.VENDOR));
+                components.push(gl.getParameter(gl.RENDERER));
+            }
+        } catch (e) {
+            components.push('webgl-error');
+        }
+        
+        // Hash all components
+        const fingerprint = this.hashString(components.join('|'));
+        return fingerprint;
+    }
+
+    collectBrowserInfo() {
+        return {
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            languages: navigator.languages || [],
+            platform: navigator.platform,
+            cookieEnabled: navigator.cookieEnabled,
+            doNotTrack: navigator.doNotTrack,
+            screen: {
+                width: screen.width,
+                height: screen.height,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth
+            },
+            viewport: {
+                width: window.innerWidth,
+                height: window.innerHeight
+            },
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            features: {
+                localStorage: typeof localStorage !== 'undefined',
+                sessionStorage: typeof sessionStorage !== 'undefined',
+                indexedDB: typeof indexedDB !== 'undefined',
+                webGL: typeof WebGL2RenderingContext !== 'undefined',
+                touchSupport: 'ontouchstart' in window,
+                geolocation: 'geolocation' in navigator
+            },
+            connection: navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                rtt: navigator.connection.rtt
+            } : null,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    hashString(str) {
+        let hash = 0;
+        if (str.length === 0) return hash.toString();
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return Math.abs(hash).toString(36);
+    }
 
     // Wiki Modal Functions
     checkWikiModal() {
@@ -3834,6 +4012,738 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
             // Remember that user has seen the wiki
             localStorage.setItem('ai-prompt-master-wiki-shown', 'true');
         }
+    }
+
+    // Playground Gallery Methods
+    initializePlaygroundGallery() {
+        this.galleryCurrentPage = 1;
+        this.galleryLoading = false;
+        this.galleryHasMore = true;
+        
+        // Setup filter change handler
+        const filterSelect = document.getElementById('galleryTechniqueFilter');
+        if (filterSelect) {
+            filterSelect.addEventListener('change', () => {
+                this.filterGallery();
+            });
+        }
+        
+        // Load initial gallery count
+        this.updateGalleryCount();
+    }
+
+    async saveToPlaygroundGallery(model) {
+        if (!model || !model.imageUrl || !model.originalPrompt || !model.technique) {
+            return;
+        }
+
+        try {
+            // Initialize user tracking if not already done
+            if (!this.userFingerprint || !this.userSessionId) {
+                this.initializeUserTracking();
+            }
+
+            // Prepare user tracking data
+            const userTracking = {
+                fingerprint: this.userFingerprint || 'unknown',
+                session_id: this.userSessionId || 'unknown',
+                browser_info: this.browserInfo || {}
+            };
+
+            const response = await fetch('/api/playground-gallery', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    image_url: model.imageUrl,
+                    prompt: model.originalPrompt,
+                    technique: model.technique,
+                    parameters: {
+                        temperature: model.parameters.temp,
+                        topP: model.parameters.topP,
+                        topK: model.parameters.topK,
+                        model: model.parameters.model,
+                        seed: model.parameters.seed
+                    },
+                    user_tracking: userTracking
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (!result.exists) {
+                this.updateGalleryCount();
+            }
+        } catch (error) {
+            console.error('Error saving to playground gallery:', error);
+        }
+    }
+
+    async updateGalleryCount() {
+        // Gallery count badge has been removed - this function is kept for compatibility
+        // but no longer displays the count
+    }
+
+    async togglePlaygroundGallery() {
+        const gallery = document.getElementById('playgroundGallery');
+        if (!gallery) {
+            console.error('Gallery element not found');
+            return;
+        }
+        
+        const isVisible = gallery.classList.contains('active');
+        
+        if (isVisible) {
+            gallery.classList.remove('active');
+            setTimeout(() => {
+                gallery.style.display = 'none';
+            }, 400);
+            
+            // Stop auto-refresh when gallery is closed
+            this.stopAutoRefresh();
+        } else {
+            gallery.style.display = 'block';
+            setTimeout(() => {
+                gallery.classList.add('active');
+            }, 10);
+            
+            // Initialize gallery if not already loaded
+            if (!this.galleryLoaded) {
+                await this.initializeCreativeGallery();
+                this.galleryLoaded = true;
+            } else {
+                // Always restart auto-refresh when reopening gallery
+                this.stopAutoRefresh(); // Stop any existing interval
+                this.setupAutoRefresh(); // Start fresh
+                
+                // Also update the gallery count and check for new images immediately
+                await this.updateGalleryCount();
+                await this.checkForNewImages();
+            }
+        }
+    }
+
+    async initializeCreativeGallery() {
+        // Initialize gallery state
+        this.galleryCurrentPage = 1;
+        this.galleryHasMore = true;
+        this.galleryImages = [];
+        this.filteredImages = [];
+        this.currentFilter = 'all';
+        this.searchQuery = '';
+        this.lastImageCount = 0;
+        
+        // Setup search functionality
+        this.setupGallerySearch();
+        
+        // Setup filter pills
+        this.setupFilterPills();
+        
+        // Setup intersection observer for infinite scroll
+        this.setupInfiniteScroll();
+        
+        // Setup auto-refresh for new images
+        this.setupAutoRefresh();
+        
+        // Load initial images
+        await this.loadGalleryImages();
+    }
+
+    setupGallerySearch() {
+        const searchInput = document.getElementById('gallerySearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        
+        if (!searchInput) return;
+        
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.searchQuery = e.target.value.toLowerCase().trim();
+                this.filterGalleryImages();
+                
+                // Show/hide clear button
+                clearBtn.style.display = this.searchQuery ? 'block' : 'none';
+            }, 300);
+        });
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                this.searchQuery = '';
+                clearBtn.style.display = 'none';
+                this.filterGalleryImages();
+            });
+        }
+    }
+
+    setupFilterPills() {
+        const pills = document.querySelectorAll('.filter-pill');
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                // Remove active class from all pills
+                pills.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked pill
+                pill.classList.add('active');
+                
+                // Update filter
+                this.currentFilter = pill.dataset.filter;
+                this.filterGalleryImages();
+            });
+        });
+    }
+
+    setupInfiniteScroll() {
+        const trigger = document.getElementById('galleryLoadTrigger');
+        if (!trigger) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && this.galleryHasMore && !this.galleryLoading) {
+                    this.loadMoreGalleryImages();
+                }
+            });
+        }, {
+            rootMargin: '100px'
+        });
+        
+        observer.observe(trigger);
+    }
+
+    setupAutoRefresh() {
+        // Stop any existing interval first
+        this.stopAutoRefresh();
+        
+        // Initialize countdown
+        this.refreshCountdown = 10;
+        
+        // Auto-refresh gallery every 10 seconds to check for new images
+        this.autoRefreshInterval = setInterval(async () => {
+            try {
+                await this.refreshGalleryData();
+                await this.updateGalleryCount();
+                this.refreshCountdown = 10; // Reset countdown after refresh
+            } catch (error) {
+                console.log('Auto-refresh check failed:', error);
+            }
+        }, 10000); // 10 seconds
+        
+        // Update countdown timer every second
+        this.countdownInterval = setInterval(() => {
+            this.refreshCountdown--;
+            this.updateCountdownDisplay();
+            
+            if (this.refreshCountdown <= 0) {
+                this.refreshCountdown = 10; // Reset for next cycle
+            }
+        }, 1000);
+        
+        // Add visual indicator that auto-refresh is active
+        this.showAutoRefreshIndicator(true);
+    }
+
+    async checkForNewImages() {
+        if (this.galleryLoading) {
+            return;
+        }
+        
+        try {
+            // Get current total count from server
+            const response = await fetch('/api/playground-gallery?page=1&limit=1');
+            const data = await response.json();
+            
+            const currentTotal = data.pagination.total;
+            
+            // Initialize lastImageCount if not set
+            if (this.lastImageCount === 0 && currentTotal > 0) {
+                this.lastImageCount = currentTotal;
+                return;
+            }
+            
+            // Always refresh to catch any changes
+            if (this.lastImageCount > 0) {
+                await this.refreshGalleryData();
+                
+                // If we have new images, show notification
+                if (currentTotal > this.lastImageCount) {
+                    const newImageCount = currentTotal - this.lastImageCount;
+                    this.showNewImageNotification(newImageCount);
+                }
+            }
+            
+            this.lastImageCount = currentTotal;
+            this.updateGalleryCount();
+            
+        } catch (error) {
+            console.error('Error checking for new images:', error);
+        }
+    }
+
+    async refreshGalleryData() {
+        // Store current scroll position
+        const container = document.querySelector('.masonry-gallery-container');
+        const scrollTop = container ? container.scrollTop : 0;
+        
+        try {
+            // Fetch fresh data from API
+            const response = await fetch('/api/playground-gallery?page=1&limit=100');
+            const data = await response.json();
+            
+            // Replace gallery data completely
+            this.galleryImages = data.images || [];
+            this.galleryCurrentPage = 1;
+            this.galleryHasMore = data.pagination?.hasMore || false;
+            
+            // Update filter counts and display
+            this.updateFilterCounts();
+            this.filterGalleryImages();
+            
+            // Restore scroll position
+            if (container) {
+                setTimeout(() => {
+                    container.scrollTop = scrollTop;
+                }, 100);
+            }
+            
+        } catch (error) {
+            console.error('Error refreshing gallery:', error);
+        }
+    }
+
+    showNewImageNotification(count) {
+        // Create a subtle floating notification
+        const notification = document.createElement('div');
+        notification.className = 'new-image-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-palette"></i>
+                <span>${count} new artwork${count > 1 ? 's' : ''} added!</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.add('visible');
+        }, 100);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.remove('visible');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
+
+    // Clean up auto-refresh when gallery is closed
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+        
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+        
+        // Remove visual indicator
+        this.showAutoRefreshIndicator(false);
+    }
+
+    showAutoRefreshIndicator(show) {
+        const galleryTitle = document.querySelector('.gallery-title-section p');
+        if (!galleryTitle) return;
+        
+        if (show) {
+            if (!galleryTitle.textContent.includes('Live Updates')) {
+                galleryTitle.innerHTML = galleryTitle.innerHTML + ' <span class="auto-refresh-indicator">• Live Updates Active <span class="countdown-timer">(10s)</span> <button class="manual-refresh-btn" onclick="modelBuilder.manualRefresh()">🔄</button></span>';
+                // Start countdown display immediately
+                this.updateCountdownDisplay();
+            }
+        } else {
+            const indicator = galleryTitle.querySelector('.auto-refresh-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+    }
+
+    async manualRefresh() {
+        this.refreshCountdown = 10; // Reset countdown
+        
+        // Direct refresh without checking for new images first
+        await this.refreshGalleryData();
+        await this.updateGalleryCount();
+        
+        this.updateCountdownDisplay();
+    }
+
+    updateCountdownDisplay() {
+        const countdownElement = document.querySelector('.countdown-timer');
+        if (countdownElement) {
+            countdownElement.textContent = `(${this.refreshCountdown}s)`;
+        }
+    }
+
+    async loadGalleryImages(page = 1, reset = false) {
+        if (this.galleryLoading) return;
+        
+        this.galleryLoading = true;
+        const loadingEl = document.getElementById('galleryLoading');
+        const triggerEl = document.getElementById('galleryLoadTrigger');
+        
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (triggerEl) triggerEl.style.display = 'none';
+
+        try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: '20'
+            });
+
+            const response = await fetch(`/api/playground-gallery?${params}`);
+            const data = await response.json();
+
+            if (reset) {
+                this.galleryImages = [];
+            }
+
+            if (data.images && data.images.length > 0) {
+                this.galleryImages.push(...data.images);
+            }
+
+            // Update pagination
+            this.galleryCurrentPage = page;
+            this.galleryHasMore = data.pagination.hasMore;
+            
+            // Update filter counts and display images
+            this.updateFilterCounts();
+            this.filterGalleryImages();
+            
+            if (this.galleryHasMore) {
+                if (triggerEl) triggerEl.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Error loading gallery images:', error);
+            this.showNotification('Error loading gallery images', 'error');
+        } finally {
+            this.galleryLoading = false;
+            if (loadingEl) loadingEl.style.display = 'none';
+        }
+    }
+
+    updateFilterCounts() {
+        const counts = {
+            all: this.galleryImages.length,
+            'zero-shot': 0,
+            'few-shot': 0,
+            'chain-thought': 0,
+            'role-play': 0,
+            'structured': 0
+        };
+        
+        this.galleryImages.forEach(image => {
+            if (counts.hasOwnProperty(image.technique)) {
+                counts[image.technique]++;
+            }
+        });
+        
+        // Update pill counts
+        Object.keys(counts).forEach(key => {
+            const countEl = document.getElementById(`count${key.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)).join('')}`);
+            if (countEl) {
+                countEl.textContent = counts[key];
+            }
+        });
+    }
+
+    filterGalleryImages() {
+        let filtered = this.galleryImages;
+        
+        // Apply technique filter
+        if (this.currentFilter !== 'all') {
+            filtered = filtered.filter(image => image.technique === this.currentFilter);
+        }
+        
+        // Apply search filter
+        if (this.searchQuery) {
+            filtered = filtered.filter(image => {
+                const searchText = `${image.prompt} ${image.technique}`.toLowerCase();
+                return searchText.includes(this.searchQuery);
+            });
+        }
+        
+        this.filteredImages = filtered;
+        this.renderGalleryGrid();
+    }
+
+    renderGalleryGrid() {
+        const grid = document.getElementById('playgroundGalleryGrid');
+        const emptyState = document.getElementById('galleryEmptyState');
+        
+        if (!grid) {
+            console.error('Gallery grid element not found');
+            return;
+        }
+        
+        // Clear existing content
+        grid.innerHTML = '';
+        
+        if (this.filteredImages.length === 0) {
+            if (emptyState) emptyState.style.display = 'block';
+            return;
+        }
+        
+        if (emptyState) emptyState.style.display = 'none';
+        
+        // Render each image item
+        this.filteredImages.forEach((image, index) => {
+            try {
+                const item = this.createModernGalleryItem(image, index);
+                grid.appendChild(item);
+            } catch (error) {
+                console.error('Error creating gallery item:', error, image);
+            }
+        });
+    }
+
+    createModernGalleryItem(image, index) {
+        const item = document.createElement('div');
+        item.className = 'modern-gallery-item';
+        
+        const params = typeof image.parameters === 'string' ? 
+            JSON.parse(image.parameters) : image.parameters;
+        
+        const createdDate = new Date(image.created_at);
+        const formattedDate = createdDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        item.innerHTML = `
+            <img src="${image.image_url}" alt="Generated artwork" class="modern-gallery-image" loading="lazy">
+            <div class="modern-gallery-content">
+                <div class="modern-gallery-technique">${this.formatTechnique(image.technique)}</div>
+                <div class="modern-gallery-prompt">${image.prompt}</div>
+                <div class="modern-gallery-meta">
+                    <div class="modern-gallery-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>${formattedDate}</span>
+                    </div>
+                    <div class="modern-gallery-model">${params.model || 'flux'}</div>
+                </div>
+            </div>
+        `;
+
+        // Add staggered animation delay
+        item.style.animationDelay = `${(index % 20) * 0.1}s`;
+
+        // Add click handler for modal
+        item.addEventListener('click', () => {
+            this.showCreativeGalleryModal(image);
+        });
+
+        return item;
+    }
+
+    // Keep legacy function for compatibility
+    createGalleryItem(image) {
+        return this.createModernGalleryItem(image, 0);
+    }
+
+    formatTechnique(technique) {
+        const techniqueMap = {
+            'zero-shot': 'Zero-Shot',
+            'few-shot': 'Few-Shot',
+            'chain-thought': 'Chain-of-Thought',
+            'role-play': 'Role-Play',
+            'structured': 'Structured'
+        };
+        return techniqueMap[technique] || technique;
+    }
+
+    showCreativeGalleryModal(image) {
+        const params = typeof image.parameters === 'string' ? 
+            JSON.parse(image.parameters) : image.parameters;
+        
+        // Create enhanced creative gallery modal
+        const modal = document.createElement('div');
+        modal.className = 'instagram-modal active';
+        
+        const createdDate = new Date(image.created_at);
+        const formattedDateTime = createdDate.toLocaleDateString('en-US', { 
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+        
+        modal.innerHTML = `
+            <div class="instagram-modal-content">
+                <button class="instagram-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="instagram-container">
+                    <!-- Left side - Image -->
+                    <div class="instagram-image-section">
+                        <img src="${image.image_url}" alt="Generated artwork" class="instagram-image">
+                        <div class="instagram-overlay-info">
+                            <div class="instagram-stats">
+                                <div class="stat-item">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Creative Gallery</span>
+                                </div>
+                                <div class="anonymous-indicator">✨ Community Masterpiece</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right side - Details -->
+                    <div class="instagram-details-section">
+                        <div class="instagram-header">
+                            <div class="profile-section">
+                                <div class="profile-avatar">
+                                    🎨
+                                </div>
+                                <div class="profile-info">
+                                    <h3>Anonymous Creator</h3>
+                                    <span class="technique-tag">${this.formatTechnique(image.technique)} Technique</span>
+                                </div>
+                            </div>
+                            <div class="technique-badge-modal">
+                                <i class="fas fa-magic"></i>
+                                ${this.formatTechnique(image.technique)}
+                            </div>
+                        </div>
+                        
+                        <div class="instagram-content">
+                            <div class="content-section">
+                                <h4>💭 Creative Prompt</h4>
+                                <p class="prompt-content">${image.prompt}</p>
+                            </div>
+                            
+                            <div class="content-section">
+                                <h4>🎛️ Generation Settings</h4>
+                                <div class="settings-grid">
+                                    <div class="setting-item">
+                                        <span class="setting-label">AI Model</span>
+                                        <span class="setting-value">${(params.model || 'flux').toUpperCase()}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Temperature</span>
+                                        <span class="setting-value">${params.temperature}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Top-P</span>
+                                        <span class="setting-value">${params.topP}</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span class="setting-label">Top-K</span>
+                                        <span class="setting-value">${params.topK}</span>
+                                    </div>
+                                    ${params.seed ? `
+                                    <div class="setting-item">
+                                        <span class="setting-label">Seed</span>
+                                        <span class="setting-value">${params.seed}</span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <div class="content-section">
+                                <h4>🏷️ Artwork Details</h4>
+                                <div class="artwork-metadata">
+                                    <div class="metadata-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Created: ${formattedDateTime}</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-brain"></i>
+                                        <span>Technique: ${this.formatTechnique(image.technique)}</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <i class="fas fa-users"></i>
+                                        <span>Community Gallery</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="instagram-actions">
+                            <button class="action-btn creative-action" onclick="navigator.clipboard.writeText('${image.prompt}').then(() => modelBuilder.showNotification('Prompt copied to clipboard!', 'success'))">
+                                <i class="fas fa-copy"></i> Copy Prompt
+                            </button>
+                            
+                            <div class="meta-info">
+                                <span class="submit-time">
+                                    <i class="fas fa-palette"></i>
+                                    Part of ${this.galleryImages.length} community artworks
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        
+        // Add enhanced modal animations
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.opacity = '1';
+        }, 10);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeCreativeModal(modal);
+            }
+        });
+
+        // Add keyboard support
+        const handleKeyPress = (e) => {
+            if (e.key === 'Escape') {
+                this.closeCreativeModal(modal);
+                document.removeEventListener('keydown', handleKeyPress);
+            }
+        };
+        document.addEventListener('keydown', handleKeyPress);
+    }
+
+    closeCreativeModal(modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+
+    // Keep legacy function for compatibility
+    showGalleryModal(image) {
+        this.showCreativeGalleryModal(image);
+    }
+
+    async loadMoreGalleryImages() {
+        await this.loadGalleryImages(this.galleryCurrentPage + 1, false);
+    }
+
+    async filterGallery() {
+        // This function is kept for backward compatibility
+        // New filtering is handled by filterGalleryImages()
+        this.filterGalleryImages();
     }
 }
 

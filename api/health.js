@@ -60,7 +60,8 @@ module.exports = async (req, res) => {
                     (SELECT COUNT(*) FROM classes) as classes_count,
                     (SELECT COUNT(*) FROM assignments) as assignments_count,
                     (SELECT COUNT(*) FROM submissions) as submissions_count,
-                    (SELECT COUNT(*) FROM votes) as votes_count
+                    (SELECT COUNT(*) FROM votes) as votes_count,
+                    (SELECT COUNT(*) FROM playground_gallery) as playground_gallery_count
             `);
             
             await pool.end();
@@ -76,7 +77,8 @@ module.exports = async (req, res) => {
                     classes: tablesResult.rows[0].classes_count,
                     assignments: tablesResult.rows[0].assignments_count,
                     submissions: tablesResult.rows[0].submissions_count,
-                    votes: tablesResult.rows[0].votes_count
+                    votes: tablesResult.rows[0].votes_count,
+                    playground_gallery: tablesResult.rows[0].playground_gallery_count
                 }
             };
         } catch (error) {

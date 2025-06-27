@@ -495,6 +495,247 @@ app.delete('/api/submissions/:submission_id/unlike', async (req, res) => {
     }
 });
 
+// Playground Gallery API endpoints
+app.get('/api/playground-gallery', async (req, res) => {
+    try {
+        await initializeDatabase();
+        
+        // Create playground_gallery table if it doesn't exist with user tracking
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS playground_gallery (
+                id SERIAL PRIMARY KEY,
+                image_url TEXT UNIQUE NOT NULL,
+                prompt TEXT NOT NULL,
+                technique VARCHAR(50) NOT NULL,
+                parameters JSONB NOT NULL,
+                user_ip INET,
+                user_agent TEXT,
+                user_fingerprint TEXT,
+                browser_info JSONB,
+                session_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Add user tracking columns if they don't exist (migration)
+        try {
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_ip INET`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_agent TEXT`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_fingerprint TEXT`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS browser_info JSONB`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS session_id TEXT`);
+        } catch (migrationError) {
+            console.log('Migration already completed or columns exist');
+        }
+        
+        // Get gallery images with pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = (page - 1) * limit;
+        const technique = req.query.technique; // Optional filter
+        
+        let query = 'SELECT * FROM playground_gallery';
+        let countQuery = 'SELECT COUNT(*) FROM playground_gallery';
+        let queryParams = [];
+        let countParams = [];
+        
+        if (technique && technique !== 'all') {
+            query += ' WHERE technique = $1';
+            countQuery += ' WHERE technique = $1';
+            queryParams.push(technique);
+            countParams.push(technique);
+        }
+        
+        query += ' ORDER BY created_at DESC LIMIT $' + (queryParams.length + 1) + ' OFFSET $' + (queryParams.length + 2);
+        queryParams.push(limit, offset);
+        
+        const [imagesResult, countResult] = await Promise.all([
+            pool.query(query, queryParams),
+            pool.query(countQuery, countParams)
+        ]);
+        
+        const totalImages = parseInt(countResult.rows[0].count);
+        const totalPages = Math.ceil(totalImages / limit);
+        
+        res.json({
+            images: imagesResult.rows,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalImages,
+                hasMore: page < totalPages
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error fetching playground gallery:', error);
+        res.status(500).json({ error: 'Failed to fetch gallery' });
+    }
+});
+
+app.post('/api/playground-gallery', async (req, res) => {
+    try {
+        await initializeDatabase();
+        
+        // Create playground_gallery table if it doesn't exist with user tracking
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS playground_gallery (
+                id SERIAL PRIMARY KEY,
+                image_url TEXT UNIQUE NOT NULL,
+                prompt TEXT NOT NULL,
+                technique VARCHAR(50) NOT NULL,
+                parameters JSONB NOT NULL,
+                user_ip INET,
+                user_agent TEXT,
+                user_fingerprint TEXT,
+                browser_info JSONB,
+                session_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Add user tracking columns if they don't exist (migration)
+        try {
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_ip INET`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_agent TEXT`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS user_fingerprint TEXT`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS browser_info JSONB`);
+            await pool.query(`ALTER TABLE playground_gallery ADD COLUMN IF NOT EXISTS session_id TEXT`);
+        } catch (migrationError) {
+            console.log('Migration already completed or columns exist');
+        }
+        
+        const { image_url, prompt, technique, parameters, user_tracking } = req.body;
+        
+        if (!image_url || !prompt || !technique || !parameters) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        
+        // Extract user tracking information
+        const user_ip = getRealIP(req);
+        const user_agent = req.get('User-Agent');
+        const user_fingerprint = user_tracking?.fingerprint;
+        const browser_info = user_tracking?.browser_info;
+        const session_id = user_tracking?.session_id;
+        
+        try {
+            // Check if image URL already exists
+            const existingCheck = await pool.query(
+                'SELECT id FROM playground_gallery WHERE image_url = $1',
+                [image_url]
+            );
+            
+            if (existingCheck.rows.length > 0) {
+                return res.json({ message: 'Image already exists in gallery', exists: true });
+            }
+            
+            // Insert new image with user tracking data
+            const result = await pool.query(
+                `INSERT INTO playground_gallery 
+                 (image_url, prompt, technique, parameters, user_ip, user_agent, user_fingerprint, browser_info, session_id) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                [
+                    image_url, 
+                    prompt, 
+                    technique, 
+                    JSON.stringify(parameters),
+                    user_ip,
+                    user_agent,
+                    user_fingerprint,
+                    JSON.stringify(browser_info),
+                    session_id
+                ]
+            );
+            
+            res.json({ message: 'Image added to gallery', data: result.rows[0] });
+        } catch (error) {
+            if (error.code === '23505') { // Unique constraint violation
+                return res.json({ message: 'Image already exists in gallery', exists: true });
+            }
+            throw error;
+        }
+        
+    } catch (error) {
+        console.error('Error saving to playground gallery:', error);
+        res.status(500).json({ error: 'Failed to save to gallery' });
+    }
+});
+
+// Admin endpoint to view user analytics (for development/admin purposes only)
+app.get('/api/admin/user-analytics', async (req, res) => {
+    try {
+        await initializeDatabase();
+        
+        // Get user analytics from playground gallery
+        const analyticsQuery = `
+            SELECT 
+                user_ip,
+                user_fingerprint,
+                session_id,
+                browser_info,
+                COUNT(*) as images_created,
+                MIN(created_at) as first_visit,
+                MAX(created_at) as last_visit,
+                ARRAY_AGG(DISTINCT technique) as techniques_used
+            FROM playground_gallery 
+            WHERE user_ip IS NOT NULL 
+            GROUP BY user_ip, user_fingerprint, session_id, browser_info
+            ORDER BY images_created DESC, last_visit DESC
+        `;
+        
+        const analyticsResult = await pool.query(analyticsQuery);
+        
+        // Get summary statistics
+        const summaryQuery = `
+            SELECT 
+                COUNT(DISTINCT user_ip) as unique_ips,
+                COUNT(DISTINCT user_fingerprint) as unique_fingerprints,
+                COUNT(DISTINCT session_id) as unique_sessions,
+                COUNT(*) as total_images
+            FROM playground_gallery 
+            WHERE user_ip IS NOT NULL
+        `;
+        
+        const summaryResult = await pool.query(summaryQuery);
+        
+        // Calculate average session duration separately to avoid nested aggregates
+        let avgSessionDuration = 0;
+        try {
+            const durationQuery = `
+                SELECT AVG(session_duration_minutes) as avg_session_duration_minutes
+                FROM (
+                    SELECT 
+                        session_id,
+                        EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at)))/60 as session_duration_minutes
+                    FROM playground_gallery 
+                    WHERE user_ip IS NOT NULL AND session_id IS NOT NULL
+                    GROUP BY session_id
+                    HAVING COUNT(*) > 1
+                ) session_durations
+            `;
+            const durationResult = await pool.query(durationQuery);
+            avgSessionDuration = durationResult.rows[0]?.avg_session_duration_minutes || 0;
+        } catch (durationError) {
+            console.log('Could not calculate session duration:', durationError.message);
+        }
+        
+        res.json({
+            summary: {
+                ...summaryResult.rows[0],
+                avg_session_duration_minutes: avgSessionDuration
+            },
+            user_analytics: analyticsResult.rows.map(row => ({
+                ...row,
+                browser_info: typeof row.browser_info === 'string' ? JSON.parse(row.browser_info) : row.browser_info
+            }))
+        });
+        
+    } catch (error) {
+        console.error('Error fetching user analytics:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+});
+
 // Serve frontend files
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
