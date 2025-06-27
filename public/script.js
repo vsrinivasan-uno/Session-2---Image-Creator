@@ -35,6 +35,9 @@ class LLMEducationPlatform {
         this.loadDefaultAssignment();
         this.checkWikiModal();
         
+        // Initialize auto-resize for all textareas
+        this.initAllAutoResize();
+        
         // Take over navigation if loaded after minimal script
         if (window.navigationSetup) {
             this.takeOverNavigation();
@@ -472,10 +475,63 @@ class LLMEducationPlatform {
             if (e.target.matches('#rolePlayRole, #rolePlayContext, #rolePlayTask, #rolePlayAudience')) {
                 this.updateRolePlayPrompt();
             }
-            if (e.target.matches('#structuredSubject, #structuredStyle, #structuredComposition, #structuredLighting, #structuredMood, #structuredDetails, #structuredTechnical, #structuredAdditional')) {
+            if (e.target.matches('.structured-container .structure-input')) {
                 this.updateStructuredPrompt();
             }
         });
+
+        // Setup dropdown click handlers
+        document.addEventListener('click', (e) => {
+            // Handle dropdown item clicks
+            if (e.target.closest('.dropdown-item:not(.disabled)')) {
+                const item = e.target.closest('.dropdown-item');
+                const structureType = item.getAttribute('data-structure');
+                if (structureType) {
+                    this.addStructure(structureType);
+                }
+            }
+            
+            // Close dropdown when clicking outside
+            if (!e.target.closest('.add-structure-control')) {
+                const dropdown = document.getElementById('structureDropdown');
+                const button = document.querySelector('.add-structure-btn');
+                if (dropdown && dropdown.style.display === 'block') {
+                    dropdown.style.display = 'none';
+                    button?.classList.remove('active');
+                }
+            }
+        });
+
+        // Initialize structured prompt with auto-resize
+        this.initializeStructuredBuilder();
+    }
+
+    initializeStructuredBuilder() {
+        // Ensure the dynamic structures container exists
+        const container = document.getElementById('dynamicStructures');
+        if (!container) {
+            return;
+        }
+
+        // Clear any existing content and start fresh
+        container.innerHTML = '';
+
+        // Always start with a Subject structure (minimum required)
+        this.addStructure('subject');
+
+        // Setup auto-resize for existing textareas
+        const existingTextareas = document.querySelectorAll('.structured-container .auto-resize');
+        existingTextareas.forEach(textarea => {
+            this.setupAutoResize(textarea);
+        });
+
+        // Update initial dropdown state
+        setTimeout(() => {
+            this.updateDropdownOptions();
+        }, 100);
+
+        // Initialize with empty prompt display
+        this.updateStructuredPrompt();
     }
 
     setupPromptGrading() {
@@ -1187,10 +1243,17 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <textarea class="example-input" placeholder="Add another example following the same pattern"></textarea>
+                            <textarea class="example-input auto-resize" placeholder="Add another example following the same pattern"></textarea>
         `;
         
         container.appendChild(newExample);
+        
+        // Setup auto-resize for the new textarea
+        const newTextarea = newExample.querySelector('textarea');
+        if (newTextarea) {
+            this.setupAutoResize(newTextarea);
+        }
+        
         this.updateFewShotPrompt();
     }
     
@@ -1226,10 +1289,17 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <textarea class="step-input" placeholder="Add another logical step in your reasoning process"></textarea>
+                            <textarea class="step-input auto-resize" placeholder="Add another logical step in your reasoning process"></textarea>
         `;
         
         container.appendChild(newStep);
+        
+        // Setup auto-resize for the new textarea
+        const newTextarea = newStep.querySelector('textarea');
+        if (newTextarea) {
+            this.setupAutoResize(newTextarea);
+        }
+        
         this.updateChainThoughtPrompt();
     }
     
@@ -1338,30 +1408,243 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         display.textContent = prompt;
     }
     
+    // Structure definitions for the dynamic builder
+    getStructureDefinitions() {
+        return {
+            subject: {
+                icon: 'fas fa-user',
+                title: 'SUBJECT',
+                placeholder: 'Main subject/character (e.g., "Professional data engineer with confident expression")'
+            },
+            style: {
+                icon: 'fas fa-palette',
+                title: 'STYLE',
+                placeholder: 'Art or photography style (e.g., "Commercial photography, documentary style")'
+            },
+            composition: {
+                icon: 'fas fa-crop',
+                title: 'COMPOSITION',
+                placeholder: 'Framing and layout (e.g., "Professional headshot, rule of thirds")'
+            },
+            lighting: {
+                icon: 'fas fa-lightbulb',
+                title: 'LIGHTING',
+                placeholder: 'Light setup and mood (e.g., "Natural office lighting, professional setup")'
+            },
+            mood: {
+                icon: 'fas fa-smile',
+                title: 'MOOD',
+                placeholder: 'Emotional atmosphere (e.g., "Confident, professional, approachable")'
+            },
+            details: {
+                icon: 'fas fa-search',
+                title: 'DETAILS',
+                placeholder: 'Specific elements (e.g., "Business attire, modern workspace background")'
+            },
+            technical: {
+                icon: 'fas fa-cog',
+                title: 'TECHNICAL',
+                placeholder: 'Camera specifications (e.g., "Shot with 85mm lens, commercial quality")'
+            },
+            colors: {
+                icon: 'fas fa-fill-drip',
+                title: 'COLORS',
+                placeholder: 'Color palette and scheme (e.g., "Professional blues and grays, modern colors")'
+            },
+            background: {
+                icon: 'fas fa-mountain',
+                title: 'BACKGROUND',
+                placeholder: 'Scene environment (e.g., "Modern office environment, city skyline")'
+            },
+            perspective: {
+                icon: 'fas fa-eye',
+                title: 'PERSPECTIVE',
+                placeholder: 'Viewing angle (e.g., "Eye-level perspective, straight-on view")'
+            },
+            materials: {
+                icon: 'fas fa-cube',
+                title: 'MATERIALS',
+                placeholder: 'Textures and surfaces (e.g., "Natural skin texture, fabric details")'
+            },
+            additional: {
+                icon: 'fas fa-plus-circle',
+                title: 'ADDITIONAL',
+                placeholder: 'Extra specifications or requirements'
+            }
+        };
+    }
+
+    // Toggle dropdown visibility
+    toggleStructureDropdown() {
+        const dropdown = document.getElementById('structureDropdown');
+        const button = document.querySelector('.add-structure-btn');
+        
+        if (dropdown.style.display === 'none' || !dropdown.style.display) {
+            dropdown.style.display = 'block';
+            button.classList.add('active');
+            this.updateDropdownOptions();
+        } else {
+            dropdown.style.display = 'none';
+            button.classList.remove('active');
+        }
+    }
+
+    // Update dropdown to show only available structures
+    updateDropdownOptions() {
+        const dropdown = document.getElementById('structureDropdown');
+        const container = document.getElementById('dynamicStructures');
+        const existingStructures = new Set();
+        
+        // Get currently added structures
+        container.querySelectorAll('.structured-item').forEach(item => {
+            const structure = item.getAttribute('data-structure');
+            if (structure) {
+                existingStructures.add(structure);
+            }
+        });
+
+        // Update dropdown items
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            const structure = item.getAttribute('data-structure');
+            if (existingStructures.has(structure)) {
+                item.classList.add('disabled');
+            } else {
+                item.classList.remove('disabled');
+            }
+        });
+    }
+
+    // Add a new structure
+    addStructure(structureType) {
+        const dropdown = document.getElementById('structureDropdown');
+        const item = dropdown.querySelector(`[data-structure="${structureType}"]`);
+        
+        if (item.classList.contains('disabled')) {
+            return; // Already added
+        }
+
+        const container = document.getElementById('dynamicStructures');
+        const structures = this.getStructureDefinitions();
+        const structure = structures[structureType];
+
+        const structureHtml = `
+            <div class="structured-item" data-structure="${structureType}">
+                <div class="structured-header">
+                    <h6><i class="${structure.icon}"></i> ${structure.title}</h6>
+                    <button class="remove-structure-btn" onclick="modelBuilder.removeStructure('${structureType}')" title="Remove this structure">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea id="structured${structureType.charAt(0).toUpperCase() + structureType.slice(1)}" 
+                         class="structure-input auto-resize" 
+                         placeholder="${structure.placeholder}" 
+                         rows="2"></textarea>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', structureHtml);
+        
+        // Setup auto-resize for the new textarea
+        const newTextarea = container.lastElementChild.querySelector('textarea');
+        this.setupAutoResize(newTextarea);
+        
+        // Close dropdown and update
+        this.toggleStructureDropdown();
+        this.updateStructuredPrompt();
+        
+        // Focus on the new input
+        setTimeout(() => newTextarea.focus(), 100);
+    }
+
+    // Remove a structure
+    removeStructure(structureType) {
+        const container = document.getElementById('dynamicStructures');
+        const existingItems = container.querySelectorAll('.structured-item');
+        
+        // Prevent removing the last structure (minimum 1 required)
+        if (existingItems.length <= 1) {
+            this.showNotification('At least one structure is required for the structured prompt', 'warning');
+            return;
+        }
+        
+        const item = container.querySelector(`[data-structure="${structureType}"]`);
+        
+        if (item) {
+            item.remove();
+            this.updateStructuredPrompt();
+            this.updateDropdownOptions();
+        }
+    }
+
+    // Setup auto-resize functionality for textareas
+    setupAutoResize(textarea) {
+        const autoResize = () => {
+            // Reset height to auto to get the real scroll height
+            textarea.style.height = 'auto';
+            textarea.style.overflow = 'hidden';
+            
+            const scrollHeight = textarea.scrollHeight;
+            const minHeight = 60;
+            const maxHeight = 300;
+            const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+            
+            textarea.style.height = newHeight + 'px';
+            
+            // Show scrollbar if content exceeds max height
+            if (scrollHeight > maxHeight) {
+                textarea.style.overflow = 'auto';
+            } else {
+                textarea.style.overflow = 'hidden';
+            }
+        };
+
+        // Remove existing listeners to avoid duplicates
+        textarea.removeEventListener('input', autoResize);
+        textarea.removeEventListener('paste', autoResize);
+        textarea.removeEventListener('keyup', autoResize);
+        
+        // Add event listeners
+        textarea.addEventListener('input', autoResize);
+        textarea.addEventListener('paste', () => {
+            setTimeout(autoResize, 10);
+        });
+        
+        // Also listen for keyup to catch any missed changes
+        textarea.addEventListener('keyup', autoResize);
+        
+        // Initial resize with a small delay to ensure DOM is ready
+        setTimeout(autoResize, 0);
+    }
+
+    // Initialize auto-resize for all textareas with auto-resize class
+    initAllAutoResize() {
+        const textareas = document.querySelectorAll('textarea.auto-resize, textarea.structure-input');
+        textareas.forEach(textarea => {
+            this.setupAutoResize(textarea);
+        });
+    }
+
+    // Updated structured prompt builder
     updateStructuredPrompt() {
-        const subject = document.getElementById('structuredSubject').value.trim();
-        const style = document.getElementById('structuredStyle').value.trim();
-        const composition = document.getElementById('structuredComposition').value.trim();
-        const lighting = document.getElementById('structuredLighting').value.trim();
-        const mood = document.getElementById('structuredMood').value.trim();
-        const details = document.getElementById('structuredDetails').value.trim();
-        const technical = document.getElementById('structuredTechnical').value.trim();
-        const additional = document.getElementById('structuredAdditional').value.trim();
+        const container = document.getElementById('dynamicStructures');
         const display = document.getElementById('structuredFinalPrompt');
+        const structures = this.getStructureDefinitions();
         
         let prompt = '';
         
-        if (subject) prompt += `SUBJECT: ${subject}\n`;
-        if (style) prompt += `STYLE: ${style}\n`;
-        if (composition) prompt += `COMPOSITION: ${composition}\n`;
-        if (lighting) prompt += `LIGHTING: ${lighting}\n`;
-        if (mood) prompt += `MOOD: ${mood}\n`;
-        if (details) prompt += `DETAILS: ${details}\n`;
-        if (technical) prompt += `TECHNICAL: ${technical}\n`;
-        if (additional) prompt += `ADDITIONAL: ${additional}\n`;
+        // Iterate through all added structures in order
+        container.querySelectorAll('.structured-item').forEach(item => {
+            const structureType = item.getAttribute('data-structure');
+            const textarea = item.querySelector('textarea');
+            const value = textarea ? textarea.value.trim() : '';
+            
+            if (value && structures[structureType]) {
+                prompt += `${structures[structureType].title}: ${value}\n`;
+            }
+        });
         
         if (!prompt) {
-            prompt = 'SUBJECT: [Main subject]\nSTYLE: [Art style]\nCOMPOSITION: [Framing]\nLIGHTING: [Light setup]\nMOOD: [Atmosphere]\nDETAILS: [Specific elements]\nTECHNICAL: [Quality specs]';
+            prompt = 'Add structures above to build your prompt...';
         }
         
         display.textContent = prompt;
@@ -1495,19 +1778,31 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     // Zero-Shot Examples
     loadZeroShotGood() {
         const prompt = `Professional corporate headshot of confident technology executive in charcoal business suit, sitting at modern workspace with computer screens background, shot with 85mm portrait lens, studio lighting setup, commercial photography quality, crystal clear focus, realistic skin texture, magazine cover quality`;
-        document.getElementById('zeroShotPrompt').value = prompt;
+        const textarea = document.getElementById('zeroShotPrompt');
+        textarea.value = prompt;
+        // Trigger auto-resize
+        this.setupAutoResize(textarea);
+        textarea.dispatchEvent(new Event('input'));
         this.showNotification('Good zero-shot example loaded!', 'success');
     }
 
     loadZeroShotBad() {
         const prompt = `professional person`;
-        document.getElementById('zeroShotPrompt').value = prompt;
+        const textarea = document.getElementById('zeroShotPrompt');
+        textarea.value = prompt;
+        // Trigger auto-resize
+        this.setupAutoResize(textarea);
+        textarea.dispatchEvent(new Event('input'));
         this.showNotification('Poor zero-shot example loaded - notice how vague it is!', 'warning');
     }
 
     loadZeroShotBest() {
         const prompt = `Create a stunning professional portrait masterpiece: a distinguished senior architect with confident expression and thoughtful demeanor, wearing modern casual business attire with architectural blueprints visible in background, standing in contemporary design studio with natural lighting from large windows. Capture with professional medium format camera using 85mm portrait lens at f/2.8 aperture, studio-quality lighting setup with key light and subtle fill light, achieving crystal-clear focus on subject's eyes and natural skin texture. Render in commercial photography quality with magazine-cover precision, showcasing professional expertise and creative competence in stunning high-resolution detail.`;
-        document.getElementById('zeroShotPrompt').value = prompt;
+        const textarea = document.getElementById('zeroShotPrompt');
+        textarea.value = prompt;
+        // Trigger auto-resize
+        this.setupAutoResize(textarea);
+        textarea.dispatchEvent(new Event('input'));
         this.showNotification('Best practice zero-shot example loaded!', 'success');
     }
 
@@ -1542,13 +1837,20 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <textarea class="example-input">${example}</textarea>
+                <textarea class="example-input auto-resize">${example}</textarea>
             `;
             container.appendChild(exampleDiv);
         });
         
         // Set task
         document.getElementById('fewShotTask').value = task;
+        
+        // Setup auto-resize for loaded textareas
+        setTimeout(() => {
+            container.querySelectorAll('textarea').forEach(textarea => {
+                this.setupAutoResize(textarea);
+            });
+        }, 100);
         
         // Update the final prompt display
         this.updateFewShotPrompt();
@@ -1613,13 +1915,25 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <textarea class="step-input">${step}</textarea>
+                <textarea class="step-input auto-resize">${step}</textarea>
             `;
             container.appendChild(stepDiv);
         });
         
         // Set final instruction
         document.getElementById('chainThoughtFinal').value = final;
+        
+        // Setup auto-resize for loaded textareas
+        setTimeout(() => {
+            container.querySelectorAll('textarea').forEach(textarea => {
+                this.setupAutoResize(textarea);
+            });
+            // Also setup auto-resize for the final instruction textarea
+            const finalTextarea = document.getElementById('chainThoughtFinal');
+            if (finalTextarea) {
+                this.setupAutoResize(finalTextarea);
+            }
+        }, 100);
         
         // Update the final prompt display
         this.updateChainThoughtPrompt();
@@ -1670,6 +1984,16 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
         document.getElementById('rolePlayTask').value = task;
         document.getElementById('rolePlayAudience').value = audience;
         
+        // Setup auto-resize for role-play textareas
+        setTimeout(() => {
+            ['rolePlayRole', 'rolePlayContext', 'rolePlayTask', 'rolePlayAudience'].forEach(id => {
+                const textarea = document.getElementById(id);
+                if (textarea) {
+                    this.setupAutoResize(textarea);
+                }
+            });
+        }, 100);
+        
         // Update the final prompt display
         this.updateRolePlayPrompt();
     }
@@ -1712,14 +2036,51 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
     }
 
     loadStructuredComponents(components) {
-        document.getElementById('structuredSubject').value = components.subject || '';
-        document.getElementById('structuredStyle').value = components.style || '';
-        document.getElementById('structuredComposition').value = components.composition || '';
-        document.getElementById('structuredLighting').value = components.lighting || '';
-        document.getElementById('structuredMood').value = components.mood || '';
-        document.getElementById('structuredDetails').value = components.details || '';
-        document.getElementById('structuredTechnical').value = components.technical || '';
-        document.getElementById('structuredAdditional').value = components.additional || '';
+        // Clear existing dynamic structures
+        const container = document.getElementById('dynamicStructures');
+        if (!container) {
+            console.error('Dynamic structures container not found!');
+            return;
+        }
+        container.innerHTML = '';
+        
+        // Mapping of component keys to structure types
+        const componentMap = {
+            subject: 'subject',
+            style: 'style', 
+            composition: 'composition',
+            lighting: 'lighting',
+            mood: 'mood',
+            details: 'details',
+            technical: 'technical',
+            additional: 'additional'
+        };
+        
+        // Add structures that have content
+        let addedStructures = 0;
+        Object.keys(components).forEach(key => {
+            if (components[key] && components[key].trim()) {
+                const structureType = componentMap[key];
+                if (structureType) {
+                    this.addStructure(structureType);
+                    addedStructures++;
+                    
+                    // Find the textarea and set its value
+                    const textarea = container.querySelector(`[data-structure="${structureType}"] textarea`);
+                    if (textarea) {
+                        textarea.value = components[key];
+                        // Trigger auto-resize
+                        this.setupAutoResize(textarea);
+                        textarea.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+        });
+        
+        // Ensure at least one structure exists (add subject if none were added)
+        if (addedStructures === 0) {
+            this.addStructure('subject');
+        }
         
         // Update the final prompt display
         this.updateStructuredPrompt();
@@ -2355,7 +2716,7 @@ MINIMUM PASSING: 4+ complete sections + logical structure + comprehensive covera
                 <div class="modal-body">
                     <p><strong>Your assignment has been submitted!</strong></p>
                     <p>Share this code with your instructor:</p>
-                    <textarea class="share-code-input" readonly>${code}</textarea>
+                    <textarea class="share-code-input auto-resize" readonly>${code}</textarea>
                     <button class="btn btn-primary" onclick="modelBuilder.copySubmissionCode('${code}', this)">
                         <i class="fas fa-copy"></i> Copy Code
                     </button>
@@ -3490,8 +3851,8 @@ function closeWikiModal() {
 }
 
 // Initialize the platform
-const modelBuilder = new LLMEducationPlatform();
-window.modelBuilder = modelBuilder; // Make it globally accessible
+window.modelBuilder = new LLMEducationPlatform();
+const modelBuilder = window.modelBuilder;
 
 // Start when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

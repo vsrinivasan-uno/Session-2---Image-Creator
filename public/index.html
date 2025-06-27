@@ -229,7 +229,7 @@
                             
                             <div class="prompt-input">
                                 <h5>✍️ Your Zero-Shot Prompt</h5>
-                                <textarea id="zeroShotPrompt" class="prompt-textarea" placeholder="Write your professional zero-shot prompt here. Be specific about style, quality, composition, and technical details."></textarea>
+                                <textarea id="zeroShotPrompt" class="prompt-textarea auto-resize" placeholder="Write your professional zero-shot prompt here. Be specific about style, quality, composition, and technical details."></textarea>
                                 <button class="btn btn-secondary btn-sm" onclick="modelBuilder.testPrompt('zeroShotPrompt', 'zero-shot')" style="margin-top: 0.5rem;">
                                     <i class="fas fa-flask"></i> Test Prompt Quality
                                 </button>
@@ -364,7 +364,7 @@ Make a photographer.</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="example-input" placeholder="First example with clear pattern"></textarea>
+                                            <textarea class="example-input auto-resize" placeholder="First example with clear pattern"></textarea>
                                         </div>
                                         <div class="example-item" data-index="1">
                                             <div class="example-item-header">
@@ -373,7 +373,7 @@ Make a photographer.</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="example-input" placeholder="Second example following same pattern"></textarea>
+                                            <textarea class="example-input auto-resize" placeholder="Second example following same pattern"></textarea>
                                         </div>
                                     </div>
                                     <button class="add-example-btn" onclick="modelBuilder.addExample('fewShot')">
@@ -383,7 +383,7 @@ Make a photographer.</div>
                                 
                                 <div class="component-section">
                                     <h6>🎯 Your Task</h6>
-                                    <textarea id="fewShotTask" class="task-input" placeholder="Following this pattern, create: [your specific request]"></textarea>
+                                    <textarea id="fewShotTask" class="task-input auto-resize" placeholder="Following this pattern, create: [your specific request]"></textarea>
                                 </div>
                                 
                                 <div class="final-prompt-display">
@@ -522,25 +522,25 @@ Result: Create a professional female surgeon...</div>
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <textarea class="step-input" placeholder="First logical step (e.g., 'Choose subject - Professional surgeon with confident expression')"></textarea>
+                                                                                    <textarea class="step-input auto-resize" placeholder="First logical step (e.g., 'Choose subject - Professional surgeon with confident expression')"></textarea>
+                                    </div>
+                                    <div class="step-item" data-index="1">
+                                        <div class="step-item-header">
+                                            <label>Step 2</label>
+                                            <button class="remove-step" onclick="modelBuilder.removeStep('chainThought', 1)" title="Remove this step">
+                                                <i class="fas fa-times"></i>
+                                            </button>
                                         </div>
-                                        <div class="step-item" data-index="1">
-                                            <div class="step-item-header">
-                                                <label>Step 2</label>
-                                                <button class="remove-step" onclick="modelBuilder.removeStep('chainThought', 1)" title="Remove this step">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <textarea class="step-input" placeholder="Second logical step (e.g., 'Define setting - Modern hospital operating room')"></textarea>
+                                        <textarea class="step-input auto-resize" placeholder="Second logical step (e.g., 'Define setting - Modern hospital operating room')"></textarea>
+                                    </div>
+                                    <div class="step-item" data-index="2">
+                                        <div class="step-item-header">
+                                            <label>Step 3</label>
+                                            <button class="remove-step" onclick="modelBuilder.removeStep('chainThought', 2)" title="Remove this step">
+                                                <i class="fas fa-times"></i>
+                                            </button>
                                         </div>
-                                        <div class="step-item" data-index="2">
-                                            <div class="step-item-header">
-                                                <label>Step 3</label>
-                                                <button class="remove-step" onclick="modelBuilder.removeStep('chainThought', 2)" title="Remove this step">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <textarea class="step-input" placeholder="Third logical step (e.g., 'Establish mood - Professional, competent atmosphere')"></textarea>
+                                        <textarea class="step-input auto-resize" placeholder="Third logical step (e.g., 'Establish mood - Professional, competent atmosphere')"></textarea>
                                         </div>
                                     </div>
                                     <button class="add-step-btn" onclick="modelBuilder.addStep('chainThought')">
@@ -550,7 +550,7 @@ Result: Create a professional female surgeon...</div>
                                 
                                 <div class="component-section">
                                     <h6>🎯 Final Instruction</h6>
-                                    <textarea id="chainThoughtFinal" class="task-input" placeholder="Final synthesis: 'Result: Create a [detailed description combining all steps]'"></textarea>
+                                    <textarea id="chainThoughtFinal" class="task-input auto-resize" placeholder="Final synthesis: 'Result: Create a [detailed description combining all steps]'"></textarea>
                                 </div>
                                 
                                 <div class="final-prompt-display">
@@ -676,28 +676,28 @@ Result: Create a professional female surgeon...</div>
                                         <div class="role-play-header">
                                             <h6>🎭 Role Definition</h6>
                                         </div>
-                                        <textarea id="rolePlayRole" class="role-input" placeholder="You are a [specific professional role] (e.g., 'master concept artist for blockbuster fantasy films')"></textarea>
+                                        <textarea id="rolePlayRole" class="role-input auto-resize" placeholder="You are a [specific professional role] (e.g., 'master concept artist for blockbuster fantasy films')"></textarea>
                                     </div>
                                     
                                     <div class="role-play-item">
                                         <div class="role-play-header">
                                             <h6>🎬 Context & Setting</h6>
                                         </div>
-                                        <textarea id="rolePlayContext" class="role-input" placeholder="Professional context and expectations (e.g., 'Create a piece that would impress directors and producers')"></textarea>
+                                        <textarea id="rolePlayContext" class="role-input auto-resize" placeholder="Professional context and expectations (e.g., 'Create a piece that would impress directors and producers')"></textarea>
                                     </div>
                                     
                                     <div class="role-play-item">
                                         <div class="role-play-header">
                                             <h6>🎯 Task & Requirements</h6>
                                         </div>
-                                        <textarea id="rolePlayTask" class="role-input" placeholder="Specific assignment and professional standards (e.g., 'A breathtaking landscape with intricate architecture')"></textarea>
+                                        <textarea id="rolePlayTask" class="role-input auto-resize" placeholder="Specific assignment and professional standards (e.g., 'A breathtaking landscape with intricate architecture')"></textarea>
                                     </div>
                                     
                                     <div class="role-play-item">
                                         <div class="role-play-header">
                                             <h6>👥 Audience & Purpose</h6>
                                         </div>
-                                        <textarea id="rolePlayAudience" class="role-input" placeholder="Who will see this and why? (e.g., 'for film industry presentation, museum quality')"></textarea>
+                                        <textarea id="rolePlayAudience" class="role-input auto-resize" placeholder="Who will see this and why? (e.g., 'for film industry presentation, museum quality')"></textarea>
                                     </div>
                                 </div>
                                 
@@ -769,62 +769,80 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                             <div class="technique-components">
                                 <h5>🧩 Build Your Structured Prompt</h5>
                                 
-                                <div class="structured-container">
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>🎨 SUBJECT</h6>
+                                <div class="structured-controls">
+                                    <div class="add-structure-control">
+                                        <button class="add-structure-btn" onclick="modelBuilder.toggleStructureDropdown()">
+                                            <i class="fas fa-plus"></i>
+                                            Add Structure
+                                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                                        </button>
+                                        <div class="structure-dropdown" id="structureDropdown" style="display: none;">
+                                            <div class="dropdown-item" data-structure="subject">
+                                                <i class="fas fa-user"></i>
+                                                <span>Subject</span>
+                                                <small>Main character or object</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="style">
+                                                <i class="fas fa-palette"></i>
+                                                <span>Style</span>
+                                                <small>Art or photography style</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="composition">
+                                                <i class="fas fa-crop"></i>
+                                                <span>Composition</span>
+                                                <small>Framing and layout</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="lighting">
+                                                <i class="fas fa-lightbulb"></i>
+                                                <span>Lighting</span>
+                                                <small>Light setup and mood</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="mood">
+                                                <i class="fas fa-smile"></i>
+                                                <span>Mood</span>
+                                                <small>Emotional atmosphere</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="details">
+                                                <i class="fas fa-search"></i>
+                                                <span>Details</span>
+                                                <small>Specific elements</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="technical">
+                                                <i class="fas fa-cog"></i>
+                                                <span>Technical</span>
+                                                <small>Camera specifications</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="colors">
+                                                <i class="fas fa-fill-drip"></i>
+                                                <span>Colors</span>
+                                                <small>Color palette and scheme</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="background">
+                                                <i class="fas fa-mountain"></i>
+                                                <span>Background</span>
+                                                <small>Scene environment</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="perspective">
+                                                <i class="fas fa-eye"></i>
+                                                <span>Perspective</span>
+                                                <small>Viewing angle</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="materials">
+                                                <i class="fas fa-cube"></i>
+                                                <span>Materials</span>
+                                                <small>Textures and surfaces</small>
+                                            </div>
+                                            <div class="dropdown-item" data-structure="additional">
+                                                <i class="fas fa-plus-circle"></i>
+                                                <span>Additional</span>
+                                                <small>Extra specifications</small>
+                                            </div>
                                         </div>
-                                        <textarea id="structuredSubject" class="structure-input" placeholder="Main subject/character (e.g., 'Professional female surgeon with confident expression')"></textarea>
                                     </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>🖼️ STYLE</h6>
-                                        </div>
-                                        <textarea id="structuredStyle" class="structure-input" placeholder="Photography style (e.g., 'Medical documentary photography, commercial grade')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>📐 COMPOSITION</h6>
-                                        </div>
-                                        <textarea id="structuredComposition" class="structure-input" placeholder="Camera framing (e.g., 'Professional headshot, direct eye contact, rule of thirds')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>💡 LIGHTING</h6>
-                                        </div>
-                                        <textarea id="structuredLighting" class="structure-input" placeholder="Professional lighting (e.g., 'Studio lighting setup, controlled environment, professional grade')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>🌟 MOOD</h6>
-                                        </div>
-                                        <textarea id="structuredMood" class="structure-input" placeholder="Professional atmosphere (e.g., 'Confident, competent, professional demeanor')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>🔍 DETAILS</h6>
-                                        </div>
-                                        <textarea id="structuredDetails" class="structure-input" placeholder="Professional details (e.g., 'Medical scrubs, stethoscope, hospital equipment background')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>⚙️ TECHNICAL</h6>
-                                        </div>
-                                        <textarea id="structuredTechnical" class="structure-input" placeholder="Camera specs (e.g., 'Shot with 85mm lens, commercial photography quality, sharp focus')"></textarea>
-                                    </div>
-                                    
-                                    <div class="structured-item">
-                                        <div class="structured-header">
-                                            <h6>🎭 ADDITIONAL</h6>
-                                        </div>
-                                        <textarea id="structuredAdditional" class="structure-input" placeholder="Any other specifications or requirements"></textarea>
-                                    </div>
+                                </div>
+                                
+                                <div class="structured-container" id="dynamicStructures">
+                                    <!-- Dynamic structures will be added here -->
                                 </div>
                                 
                                 <div class="final-prompt-display">
@@ -878,7 +896,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                 
                                 <div class="detail-card">
                                     <h5>📊 Practice Notes</h5>
-                                    <textarea id="analysisNotes" class="notes-textarea" placeholder="Document what worked well, what you learned, and how you might improve... (This is just for practice - not saved)"></textarea>
+                                    <textarea id="analysisNotes" class="notes-textarea auto-resize" placeholder="Document what worked well, what you learned, and how you might improve... (This is just for practice - not saved)"></textarea>
                                 </div>
                                 
                                 <div class="result-actions-full">
@@ -945,7 +963,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                             <div class="assignment-builder active" id="assignment-builder">
                                 <div class="prompt-input">
                                     <h5>Your Assignment Prompt</h5>
-                                    <textarea id="assignmentPrompt" class="prompt-textarea" placeholder="Create your prompt based on the assignment requirements above..."></textarea>
+                                    <textarea id="assignmentPrompt" class="prompt-textarea auto-resize" placeholder="Create your prompt based on the assignment requirements above..."></textarea>
                                     <button class="btn btn-secondary btn-sm" onclick="modelBuilder.testAssignmentPrompt()" style="margin-top: 0.5rem;">
                                         <i class="fas fa-flask"></i> Test Prompt Quality
                                     </button>
@@ -1000,7 +1018,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
                                 <div class="result-details">
                                     <div class="detail-card">
                                         <h5>Final Analysis & Reflection</h5>
-                                        <textarea id="assignmentAnalysis" class="notes-textarea" placeholder="Reflect on your process: What technique did you use? Why did you choose these parameters? What challenges did you face? What would you do differently?"></textarea>
+                                        <textarea id="assignmentAnalysis" class="notes-textarea auto-resize" placeholder="Reflect on your process: What technique did you use? Why did you choose these parameters? What challenges did you face? What would you do differently?"></textarea>
                                     </div>
                                     <div class="assignment-submission">
                                         <button class="btn btn-success btn-lg" onclick="modelBuilder.submitAssignment()">
@@ -1065,7 +1083,7 @@ TECHNICAL: Shot with 85mm lens, shallow depth of field, magazine quality</div>
             </div>
             <div class="modal-body">
                 <p>Share this code with your classmates:</p>
-                <textarea id="shareCode" class="share-code-input" readonly></textarea>
+                                    <textarea id="shareCode" class="share-code-input auto-resize" readonly></textarea>
                 <button class="btn btn-primary" onclick="modelBuilder.copyShareCode()">
                     <i class="fas fa-copy"></i>
                     Copy Share Code
