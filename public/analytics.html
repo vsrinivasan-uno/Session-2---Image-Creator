@@ -484,8 +484,8 @@
                 const usersList = document.getElementById('users-list');
                 usersList.innerHTML = '';
                 
-                if (data.user_analytics && data.user_analytics.length > 0) {
-                    data.user_analytics.forEach(user => {
+                if (data.user_activity && data.user_activity.length > 0) {
+                    data.user_activity.forEach(user => {
                         const userRow = document.createElement('div');
                         userRow.className = 'user-row';
                         
@@ -499,15 +499,15 @@
                         userRow.innerHTML = `
                             <div>
                                 <strong>IP:</strong> ${user.user_ip}<br>
-                                <small>Fingerprint: ${user.user_fingerprint}</small>
+                                <small>Fingerprint: ${user.user_fingerprint || 'N/A'}</small>
                             </div>
                             <div>
                                 <strong>${user.images_created}</strong> images<br>
                                 <small>Created</small>
                             </div>
                             <div>
-                                <strong>First:</strong> ${new Date(user.first_visit).toLocaleDateString()}<br>
-                                <strong>Last:</strong> ${new Date(user.last_visit).toLocaleDateString()}
+                                <strong>First:</strong> ${new Date(user.first_activity).toLocaleDateString()}<br>
+                                <strong>Last:</strong> ${new Date(user.last_activity).toLocaleDateString()}
                             </div>
                             <div class="techniques">
                                 ${techniques}
