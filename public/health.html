@@ -669,7 +669,7 @@
                 try {
                     // Check submissions API
                     try {
-                        const submissionsResponse = await fetch('/api/submissions', { method: 'HEAD' });
+                        const submissionsResponse = await fetch('/api/submissions?health=check', { method: 'GET' });
                         const isOk = submissionsResponse.ok;
                         document.getElementById('submissionsApiStatus').textContent = isOk ? 'OK' : 'Failed';
                         if (isOk) healthyCount++;
@@ -679,7 +679,7 @@
 
                     // Check assignments API
                     try {
-                        const assignmentsResponse = await fetch('/api/assignments', { method: 'HEAD' });
+                        const assignmentsResponse = await fetch('/api/assignments?health=check', { method: 'GET' });
                         const isOk = assignmentsResponse.ok;
                         document.getElementById('assignmentsApiStatus').textContent = isOk ? 'OK' : 'Failed';
                         if (isOk) healthyCount++;
@@ -699,7 +699,7 @@
 
                     // Check playground gallery API
                     try {
-                        const playgroundResponse = await fetch('/api/playground-gallery', { method: 'HEAD' });
+                        const playgroundResponse = await fetch('/api/playground-gallery?health=check', { method: 'GET' });
                         const isOk = playgroundResponse.ok;
                         document.getElementById('playgroundGalleryApiStatus').textContent = isOk ? 'OK' : 'Failed';
                         if (isOk) healthyCount++;
@@ -709,7 +709,7 @@
 
                     // Check user analytics API
                     try {
-                        const analyticsResponse = await fetch('/api/admin/user-analytics', { method: 'HEAD' });
+                        const analyticsResponse = await fetch('/api/admin/user-analytics?health=check', { method: 'GET' });
                         const isOk = analyticsResponse.ok;
                         document.getElementById('userAnalyticsApiStatus').textContent = isOk ? 'OK' : 'Failed';
                         if (isOk) healthyCount++;
@@ -717,9 +717,9 @@
                         document.getElementById('userAnalyticsApiStatus').textContent = 'Failed';
                     }
 
-                    // Check authentication API
+                    // Check authentication API  
                     try {
-                        const authResponse = await fetch('/api/auth', { method: 'HEAD' });
+                        const authResponse = await fetch('/api/auth?health=check', { method: 'GET' });
                         const isOk = authResponse.ok;
                         document.getElementById('authApiStatus').textContent = isOk ? 'OK' : 'Failed';
                         if (isOk) healthyCount++;

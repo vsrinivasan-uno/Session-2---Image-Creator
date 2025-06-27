@@ -171,6 +171,15 @@ app.post('/api/auth', async (req, res) => {
     }
 });
 
+// Add GET method for auth health check
+app.get('/api/auth', (req, res) => {
+    if (req.query.health === 'check') {
+        res.json({ status: 'healthy', service: 'authentication' });
+    } else {
+        res.status(405).json({ error: 'Method not allowed' });
+    }
+});
+
 
 // Debug endpoint to check IP detection
 app.get('/api/debug/ip', (req, res) => {
@@ -284,6 +293,30 @@ app.get('/api/classes/:class_id/assignments', async (req, res) => {
     }
 });
 
+// Get all assignments (for health check and general use)
+app.get('/api/assignments', async (req, res) => {
+    try {
+        // Health check
+        if (req.query.health === 'check') {
+            return res.json({ status: 'healthy', service: 'assignments' });
+        }
+        
+        await initializeDatabase();
+        
+        const result = await pool.query(`
+            SELECT a.*, c.name as class_name 
+            FROM assignments a 
+            LEFT JOIN classes c ON a.class_id = c.id 
+            ORDER BY a.created_at DESC
+        `);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching assignments:', error);
+        res.status(500).json({ error: 'Failed to fetch assignments' });
+    }
+});
+
 // Get default assignment (first available assignment)
 app.get('/api/assignments/default', async (req, res) => {
     try {
@@ -301,6 +334,11 @@ app.get('/api/assignments/default', async (req, res) => {
 // Get all submissions
 app.get('/api/submissions', async (req, res) => {
     try {
+        // Health check
+        if (req.query.health === 'check') {
+            return res.json({ status: 'healthy', service: 'submissions' });
+        }
+        
         await initializeDatabase();
         
         const result = await pool.query(`
@@ -350,6 +388,11 @@ app.get('/api/assignments/:assignment_id/submissions', async (req, res) => {
         console.error('Error fetching submissions:', error);
         res.status(500).json({ error: 'Failed to fetch submissions' });
     }
+});
+
+// Health check for votes API
+app.get('/api/votes/check', (req, res) => {
+    res.json({ status: 'healthy', service: 'votes' });
 });
 
 // Check if voter has already voted for submissions
@@ -498,6 +541,11 @@ app.delete('/api/submissions/:submission_id/unlike', async (req, res) => {
 // Playground Gallery API endpoints
 app.get('/api/playground-gallery', async (req, res) => {
     try {
+        // Health check
+        if (req.query.health === 'check') {
+            return res.json({ status: 'healthy', service: 'playground_gallery' });
+        }
+        
         await initializeDatabase();
         
         // Create playground_gallery table if it doesn't exist with user tracking
@@ -664,6 +712,11 @@ app.post('/api/playground-gallery', async (req, res) => {
 // Admin endpoint to view user analytics (for development/admin purposes only)
 app.get('/api/admin/user-analytics', async (req, res) => {
     try {
+        // Health check
+        if (req.query.health === 'check') {
+            return res.json({ status: 'healthy', service: 'user_analytics' });
+        }
+        
         await initializeDatabase();
         
         // Get user analytics from playground gallery
